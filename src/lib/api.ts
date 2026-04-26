@@ -17,7 +17,7 @@ export function groupNomineesByCategory(nominees: Nominee[]): CategoryLeaderboar
   
   nominees.forEach((nominee) => {
     nominee.categories.forEach((category) => {
-      const votes = nominee.categoryVoteCounts[category.id] || 0;
+      const votes = nominee.categoryVoteCounts?.[category.id] || 0;
       
       if (!categoryMap.has(category.id)) {
         categoryMap.set(category.id, {
