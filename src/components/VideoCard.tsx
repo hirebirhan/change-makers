@@ -46,7 +46,14 @@ export default function VideoCard({ video, rank }: VideoCardProps) {
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium line-clamp-2 leading-snug group-hover:text-foreground transition-colors">{video.title}</p>
+        <a
+          href={`https://www.youtube.com/watch?v=${video.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs font-medium line-clamp-2 leading-snug hover:text-primary transition-colors"
+        >
+          {video.title}
+        </a>
         <div className="flex items-center gap-2.5 mt-1 text-[11px] text-muted-foreground">
           <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{formatNumber(video.viewCount)}</span>
           <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" />{formatNumber(video.likeCount)}</span>

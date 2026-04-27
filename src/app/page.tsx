@@ -89,9 +89,23 @@ function Dashboard() {
               </div>
             )}
             <div className="min-w-0 hidden md:block ml-1 mr-2">
-              <p className="text-sm font-semibold leading-none truncate">{channel.channelName}</p>
+              <a
+                href={`https://www.youtube.com/${channel.customUrl || `channel/${channel.channelName}`}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-semibold leading-none truncate hover:text-primary transition-colors block"
+              >
+                {channel.channelName}
+              </a>
               {channel.customUrl && (
-                <p className="text-xs text-muted-foreground mt-0.5">{channel.customUrl}</p>
+                <a
+                  href={`https://www.youtube.com/${channel.customUrl}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-muted-foreground mt-0.5 hover:text-primary transition-colors block"
+                >
+                  {channel.customUrl}
+                </a>
               )}
             </div>
             <Separator orientation="vertical" className="h-5 mx-1" />
