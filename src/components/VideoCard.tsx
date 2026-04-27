@@ -6,7 +6,7 @@ import { Eye, ThumbsUp } from "lucide-react";
 
 interface VideoCardProps {
   video: Video;
-  rank: number;
+  rank?: number;
 }
 
 function formatNumber(num: number): string {
@@ -39,9 +39,11 @@ export default function VideoCard({ video, rank }: VideoCardProps) {
             </svg>
           </div>
         )}
-        <span className="absolute bottom-0.5 right-0.5 bg-black/70 text-white text-[9px] font-bold px-1 rounded leading-4">
-          #{rank}
-        </span>
+        {rank && (
+          <span className="absolute bottom-0.5 right-0.5 bg-black/70 text-white text-[9px] font-bold px-1 rounded leading-4">
+            #{rank}
+          </span>
+        )}
       </div>
 
       {/* Info */}

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Comment, YouTubeApiResponse } from "@/types/youtube";
 import { fetchYouTubeAnalytics } from "@/lib/youtube-api";
-import { ThumbsUp, MessageCircle, Search, SmilePlus, Meh, Frown, User, ChevronLeft, ChevronRight } from "lucide-react";
+import { ThumbsUp, MessageCircle, Search, SmilePlus, Meh, Frown, User, ChevronLeft, ChevronRight, Lightbulb, TrendingUp, HelpCircle } from "lucide-react";
 
 const COMMENTS_PER_PAGE = 20;
 import { Skeleton } from "./ui/skeleton";
@@ -57,6 +57,8 @@ export function CommentsView({ initialData }: { initialData: YouTubeApiResponse 
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [summary, setSummary] = useState<CommentSummary | null>(null);
+  const [contentIdeas, setContentIdeas] = useState<string[]>([]);
+  const [loadingIdeas, setLoadingIdeas] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -86,10 +88,11 @@ export function CommentsView({ initialData }: { initialData: YouTubeApiResponse 
     })
       .then((r) => r.json())
       .then((d) => {
-        setComments(d.comments.map((c: Comment) => ({
+        const commentsWithTitles = d.comments.map((c: Comment) => ({
           ...c,
           videoTitle: data.videos.find((v) => v.id === c.videoId)?.title ?? "Unknown",
-        })));
+        }));
+        setComments(commentsWithTitles);
         setSummary(d.summary);
       })
       .catch((e) => setError(e.message))
@@ -155,6 +158,99 @@ export function CommentsView({ initialData }: { initialData: YouTubeApiResponse 
                 <span className="text-gray-600 dark:text-gray-400">{Math.round((summary.neutral / summary.total) * 100)}% Neutral</span>
                 <span className="text-red-600 dark:text-red-400">{Math.round((summary.negative / summary.total) * 100)}% Negative</span>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Content Ideas Section */}
+        {contentIdeas.length > 0 && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Lightbulb className="size-3.5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-sm">Content Ideas from Comments</CardTitle>
+                    <CardDescription className="text-xs">AI-generated video topics based on audience questions and requests</CardDescription>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setLoadingIdeas(true);
+                    fetch("/api/content-ideas", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ comments: comments.slice(0, 100) }),
+                    })
+                      .then((r) => r.json())
+                      .then((result) => setContentIdeas(result.ideas || []))
+                      .catch((e) => console.error("Failed to generate content ideas:", e))
+                      .finally(() => setLoadingIdeas(false));
+                  }}
+                  disabled={loadingIdeas}
+                  className="h-7 text-xs"
+                >
+                  <Lightbulb className="w-3 h-3 mr-1" />
+                  Regenerate
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {contentIdeas.map((idea, i) => (
+                <div key={i} className="flex items-start gap-2 p-2.5 rounded-lg bg-background/60 border border-border/40">
+                  <div className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <TrendingUp className="w-3 h-3 text-primary" />
+                  </div>
+                  <p className="text-xs leading-relaxed flex-1">{idea}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {loadingIdeas && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="py-6 text-center">
+              <Lightbulb className="w-6 h-6 mx-auto text-primary/50 mb-2 animate-pulse" />
+              <p className="text-xs font-medium">Analyzing comments for content ideas...</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {!loadingIdeas && !contentIdeas.length && comments.length > 0 && (
+          <Card className="border-border/40">
+            <CardContent className="py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <p className="text-xs font-medium">Get AI-powered content ideas</p>
+                  <p className="text-[10px] text-muted-foreground">Analyze comments to discover what your audience wants</p>
+                </div>
+              </div>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => {
+                  setLoadingIdeas(true);
+                  fetch("/api/content-ideas", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ comments: comments.slice(0, 100) }),
+                  })
+                    .then((r) => r.json())
+                    .then((result) => setContentIdeas(result.ideas || []))
+                    .catch((e) => console.error("Failed to generate content ideas:", e))
+                    .finally(() => setLoadingIdeas(false));
+                }}
+                className="h-7 text-xs"
+              >
+                <Lightbulb className="w-3 h-3 mr-1" />
+                Generate Ideas
+              </Button>
             </CardContent>
           </Card>
         )}

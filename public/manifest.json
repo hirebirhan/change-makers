@@ -1,17 +1,16 @@
 {
-  "name": "Birhan Tech Corner Analytics",
-  "short_name": "BTC Analytics",
-  "description": "YouTube channel analytics dashboard for Birhan Tech Corner",
+  "name": "Change Makers - YouTube Analytics Dashboard",
+  "short_name": "Change Makers",
+  "description": "Comprehensive YouTube channel analytics and management platform with AI-powered insights",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#F7F5F0",
-  "theme_color": "#D89012",
+  "background_color": "#ffffff",
+  "theme_color": "#FF0000",
   "icons": [
     {
       "src": "/icon.svg",
       "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/svg+xml"
     },
     {
       "src": "/apple-icon.png",
