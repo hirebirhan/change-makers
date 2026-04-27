@@ -1,0 +1,22 @@
+{
+  "name": "Birhan Tech Corner Analytics",
+  "short_name": "BTC Analytics",
+  "description": "YouTube channel analytics dashboard for Birhan Tech Corner",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7F5F0",
+  "theme_color": "#D89012",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

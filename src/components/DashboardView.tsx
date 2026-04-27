@@ -1,0 +1,73 @@
+"use client";
+
+import { useState, useCallback } from "react";
+import { useAuth } from "@/lib/auth";
+import { LoginPage } from "@/components/LoginPage";
+import { AppShell } from "@/components/AppShell";
+import ChannelOverview from "@/components/ChannelOverview";
+import AnalyticsChart from "@/components/AnalyticsChart";
+import VideoCard from "@/components/VideoCard";
+import ReportsSection from "@/components/ReportsSection";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { YouTubeApiResponse } from "@/types/youtube";
+import { fetchYouTubeAnalytics } from "@/lib/youtube-api";
+
+export function DashboardView({ initialData }: { initialData: YouTubeApiResponse }) {
+  const [data, setData] = useState(initialData);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const result = await fetchYouTubeAnalytics();
+      setData(result);
+      setLastUpdated(new Date());
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
+  return (
+    <AppShell channel={data.channel} onRefresh={refresh} refreshing={refreshing} lastUpdated={lastUpdated}>
+      <main className="flex-1 w-full px-6 py-8 space-y-6">
+        <ChannelOverview stats={data.channel} />
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <AnalyticsChart data={data.dailyMetrics} />
+          </div>
+          <Card className="flex flex-col">
+            <CardHeader>
+              <CardTitle>Top Videos</CardTitle>
+              <CardDescription>Ranked by total views</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-y-auto max-h-[340px]">
+              <div className="space-y-1">
+                {data.videos
+                  .sort((a, b) => b.viewCount - a.viewCount)
+                  .map((video, index) => (
+                    <VideoCard key={video.id} video={video} rank={index + 1} />
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <ReportsSection reports={data.reports} />
+      </main>
+
+      <footer className="border-t border-border">
+        <div className="w-full px-6 py-4 flex items-center justify-between">
+          <span className="text-xs font-medium">Birhan Tech Corner Analytics</span>
+          <p className="text-xs text-muted-foreground">Powered by YouTube Data API v3</p>
+        </div>
+      </footer>
+    </AppShell>
+  );
+}
+
+export default function DashboardViewWithAuth({ initialData }: { initialData: YouTubeApiResponse }) {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <DashboardView initialData={initialData} /> : <LoginPage />;
+}

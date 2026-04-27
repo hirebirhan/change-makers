@@ -20,12 +20,11 @@ export async function POST(req: NextRequest) {
     const { videoIds } = await req.json() as { videoIds: string[] };
     if (!videoIds?.length) return NextResponse.json({ comments: [] });
 
-    // Fetch top 10 comments per video in parallel (max 5 videos to stay within quota)
-    const limited = videoIds.slice(0, 5);
+    // Fetch comments per video in parallel
     const results = await Promise.allSettled(
-      limited.map(async (videoId) => {
+      videoIds.map(async (videoId) => {
         const res = await fetch(
-          `${BASE}/commentThreads?part=snippet&videoId=${videoId}&maxResults=10&order=relevance&key=${API_KEY}`,
+          `${BASE}/commentThreads?part=snippet&videoId=${videoId}&maxResults=100&order=relevance&key=${API_KEY}`,
           { cache: "no-store" }
         );
         const data = await res.json();

@@ -108,7 +108,7 @@ export default function AnalyticsChart({ data }: AnalyticsChartProps) {
                 <Tooltip contentStyle={tooltipStyle} labelFormatter={(l) => new Date(l).toLocaleDateString("en-US", { month: "short", day: "numeric" })} />
                 <Line type="monotone" dataKey="subscribersGained" name="Gained" stroke="var(--chart-2)" strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="subscribersLost" name="Lost" stroke="var(--chart-5)" strokeWidth={2} dot={false} strokeDasharray="4 2" />
-                <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: 12, paddingTop: 10 }} />
+                <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: 12, paddingTop: 10, color: "hsl(var(--muted-foreground))" }} />
               </LineChart>
             </ResponsiveContainer>
           </TabsContent>

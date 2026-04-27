@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LogOut, LayoutDashboard, PlaySquare, Sparkles, RefreshCw, MessageCircle, Brain } from "lucide-react";
+import { LogOut, LayoutDashboard, PlaySquare, Sparkles, RefreshCw, MessageCircle, Brain, Type } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ const NAV = [
   { href: "/videos", label: "Videos", icon: PlaySquare },
   { href: "/comments", label: "Comments", icon: MessageCircle },
   { href: "/seo", label: "SEO Studio", icon: Sparkles },
+  { href: "/title-ranker", label: "Title Ranker", icon: Type },
   { href: "/ai", label: "AI Studio", icon: Brain },
 ];
 
@@ -43,7 +44,7 @@ export function AppShell({ children, channel, onRefresh, refreshing, lastUpdated
   const pathname = usePathname();
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="min-h-screen">
       <Sidebar collapsible="icon">
         <SidebarHeader className="border-b border-sidebar-border/70 p-3">
           <SidebarMenu>
@@ -127,10 +128,9 @@ export function AppShell({ children, channel, onRefresh, refreshing, lastUpdated
         )}
       </Sidebar>
 
-      <SidebarInset>
+      <SidebarInset className="flex flex-col">
         {/* Top nav */}
-        <nav className="sticky top-0 z-20 h-14 border-b border-border bg-card/80 shadow-sm backdrop-blur-md">
-          <div className="flex h-full items-center justify-between gap-4 px-4">
+        <nav className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between gap-4 border-b border-border bg-background/95 px-4 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <SidebarTrigger />
             <div className="flex items-center gap-1 ml-auto">
               {lastUpdated && (
@@ -181,8 +181,7 @@ export function AppShell({ children, channel, onRefresh, refreshing, lastUpdated
                 <LogOut className="w-4 h-4" />
               </Button>
             </div>
-          </div>
-        </nav>
+          </nav>
 
         {children}
       </SidebarInset>
