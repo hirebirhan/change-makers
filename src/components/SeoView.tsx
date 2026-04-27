@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@/lib/auth";
-import { LoginPage } from "@/components/LoginPage";
 import { AppShell } from "@/components/AppShell";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -167,7 +165,7 @@ function SummaryCards({ seo }: { seo: SeoData }) {
   );
 }
 
-function SeoView({ initialData }: { initialData: YouTubeApiResponse }) {
+export function SeoView({ initialData }: { initialData: YouTubeApiResponse }) {
   const [data, setData] = useState(initialData);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -515,7 +513,3 @@ function SeoView({ initialData }: { initialData: YouTubeApiResponse }) {
   );
 }
 
-export default function SeoViewWithAuth({ initialData }: { initialData: YouTubeApiResponse }) {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <SeoView initialData={initialData} /> : <LoginPage />;
-}

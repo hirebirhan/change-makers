@@ -2,8 +2,7 @@ export interface ChannelStats {
   subscriberCount: number;
   viewCount: number;
   videoCount: number;
-  watchTimeHours: number;
-  avgViewDuration: string;
+  totalEngagement?: number;
   channelName: string;
   channelDescription: string;
   profileImageUrl: string;

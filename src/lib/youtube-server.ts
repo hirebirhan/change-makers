@@ -21,8 +21,7 @@ async function fetchChannel(): Promise<ChannelStats> {
     subscriberCount: parseInt(ch.statistics.subscriberCount ?? "0"),
     viewCount: parseInt(ch.statistics.viewCount ?? "0"),
     videoCount: parseInt(ch.statistics.videoCount ?? "0"),
-    watchTimeHours: 0,
-    avgViewDuration: "N/A",
+    totalEngagement: 0,
   };
 }
 
@@ -161,9 +160,10 @@ function buildMonthlyReports(videos: { publishedAt: string; viewCount: number; l
 
 export async function getYouTubeData(): Promise<YouTubeApiResponse> {
   const [channel, videos] = await Promise.all([fetchChannel(), fetchVideos()]);
+  const totalEngagement = videos.reduce((sum, v) => sum + v.likeCount + v.commentCount, 0);
   return {
     success: true,
-    channel,
+    channel: { ...channel, totalEngagement },
     videos,
     dailyMetrics: buildDailyMetrics(videos),
     reports: buildMonthlyReports(videos),

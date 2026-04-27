@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@/lib/auth";
-import { LoginPage } from "@/components/LoginPage";
 import { AppShell } from "@/components/AppShell";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -74,7 +72,7 @@ function ResultCard({ result, loading }: { result: string | null; loading: boole
   );
 }
 
-function AIView({ initialData }: { initialData: YouTubeApiResponse }) {
+export function AIView({ initialData }: { initialData: YouTubeApiResponse }) {
   const [data, setData] = useState(initialData);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -228,7 +226,3 @@ function AIView({ initialData }: { initialData: YouTubeApiResponse }) {
   );
 }
 
-export default function AIViewWithAuth({ initialData }: { initialData: YouTubeApiResponse }) {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <AIView initialData={initialData} /> : <LoginPage />;
-}

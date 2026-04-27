@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import Image from "next/image";
-import { useAuth } from "@/lib/auth";
-import { LoginPage } from "@/components/LoginPage";
 import { AppShell } from "@/components/AppShell";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -49,7 +47,7 @@ function sentimentBadge(s: Comment["sentiment"]) {
   return <Badge variant="outline" className="text-[10px]"><Meh className="w-2.5 h-2.5 mr-1" />Neutral</Badge>;
 }
 
-function CommentsView({ initialData }: { initialData: YouTubeApiResponse }) {
+export function CommentsView({ initialData }: { initialData: YouTubeApiResponse }) {
   const [data, setData] = useState(initialData);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -281,7 +279,3 @@ function CommentsView({ initialData }: { initialData: YouTubeApiResponse }) {
   );
 }
 
-export default function CommentsViewWithAuth({ initialData }: { initialData: YouTubeApiResponse }) {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <CommentsView initialData={initialData} /> : <LoginPage />;
-}

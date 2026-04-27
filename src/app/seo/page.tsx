@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { getYouTubeData } from "@/lib/youtube-server";
-import SeoViewWithAuth from "@/components/SeoView";
+import { SeoView } from "@/components/SeoView";
 
 export const metadata: Metadata = {
   title: "SEO Studio",
@@ -8,6 +10,13 @@ export const metadata: Metadata = {
 };
 
 export default async function SeoPage() {
+  const cookieStore = await cookies();
+  const isAuthenticated = cookieStore.get("yt_auth")?.value === "true";
+  
+  if (!isAuthenticated) {
+    redirect("/login");
+  }
+  
   const data = await getYouTubeData();
-  return <SeoViewWithAuth initialData={data} />;
+  return <SeoView initialData={data} />;
 }

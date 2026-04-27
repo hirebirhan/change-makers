@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { getYouTubeData } from "@/lib/youtube-server";
-import AIViewWithAuth from "@/components/AIView";
+import { AIView } from "@/components/AIView";
 
 export const metadata: Metadata = {
   title: "AI Studio",
@@ -8,6 +10,13 @@ export const metadata: Metadata = {
 };
 
 export default async function AIPage() {
+  const cookieStore = await cookies();
+  const isAuthenticated = cookieStore.get("yt_auth")?.value === "true";
+  
+  if (!isAuthenticated) {
+    redirect("/login");
+  }
+  
   const data = await getYouTubeData();
-  return <AIViewWithAuth initialData={data} />;
+  return <AIView initialData={data} />;
 }

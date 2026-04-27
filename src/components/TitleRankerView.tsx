@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useAuth } from "@/lib/auth";
-import { LoginPage } from "@/components/LoginPage";
 import { AppShell } from "@/components/AppShell";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -76,7 +74,7 @@ function CopyBtn({ text }: { text: string }) {
   );
 }
 
-function TitleRankerView({ initialData }: { initialData: YouTubeApiResponse }) {
+export function TitleRankerView({ initialData }: { initialData: YouTubeApiResponse }) {
   const [data, setData] = useState(initialData);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -348,7 +346,3 @@ function TitleRankerView({ initialData }: { initialData: YouTubeApiResponse }) {
   );
 }
 
-export default function TitleRankerWithAuth({ initialData }: { initialData: YouTubeApiResponse }) {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <TitleRankerView initialData={initialData} /> : <LoginPage />;
-}
