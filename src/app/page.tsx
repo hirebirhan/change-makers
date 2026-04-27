@@ -18,7 +18,7 @@ function Dashboard() {
       <AppShell>
         <div className="flex-1 flex items-center justify-center min-h-[60vh]">
           <div className="text-center space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-destructive flex items-center justify-center mx-auto shadow-lg shadow-destructive/30 animate-pulse">
+            <div className="w-12 h-12 rounded-2xl bg-yt-red flex items-center justify-center mx-auto shadow-lg shadow-destructive/30 animate-pulse">
               <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
               </svg>
@@ -47,7 +47,7 @@ function Dashboard() {
 
   return (
     <AppShell channel={data.channel} onRefresh={refresh} refreshing={refreshing} lastUpdated={lastUpdated}>
-      <main className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+      <main className="w-full px-6 py-8 space-y-6">
         <ChannelOverview stats={data.channel} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -75,8 +75,8 @@ function Dashboard() {
       </main>
 
       <footer className="border-t border-border">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <span className="text-xs font-medium">ChangeMakers Analytics</span>
+        <div className="w-full px-6 py-4 flex items-center justify-between">
+          <span className="text-xs font-medium">Birhan tech corner Analytics</span>
           <p className="text-xs text-muted-foreground">Powered by YouTube Data API v3</p>
         </div>
       </footer>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LogOut, LayoutDashboard, PlaySquare, Sparkles, RefreshCw } from "lucide-react";
+import { LogOut, LayoutDashboard, PlaySquare, Sparkles, RefreshCw, MessageCircle, Brain } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
@@ -17,9 +17,11 @@ import {
 import { ChannelStats } from "@/types/youtube";
 
 const NAV = [
-  { href: "/",        label: "Dashboard", icon: LayoutDashboard },
-  { href: "/videos",  label: "Videos",    icon: PlaySquare },
-  { href: "/seo",     label: "SEO Studio",icon: Sparkles },
+  { href: "/",         label: "Dashboard",  icon: LayoutDashboard },
+  { href: "/videos",   label: "Videos",     icon: PlaySquare },
+  { href: "/comments", label: "Comments",   icon: MessageCircle },
+  { href: "/seo",      label: "SEO Studio", icon: Sparkles },
+  { href: "/ai",       label: "AI Studio",  icon: Brain },
 ];
 
 const YT_LOGO = (
@@ -47,11 +49,11 @@ export function AppShell({ children, channel, onRefresh, refreshing, lastUpdated
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" render={<Link href="/" />}>
-                <div className="w-8 h-8 rounded-xl bg-destructive flex items-center justify-center shadow-md shadow-destructive/30 shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-yt-red flex items-center justify-center shadow-md shadow-destructive/30 shrink-0">
                   {YT_LOGO}
                 </div>
                 <div className="flex flex-col leading-none">
-                  <span className="font-bold text-sm">ChangeMakers</span>
+                  <span className="font-bold text-sm">Birhan tech corner</span>
                   <span className="text-xs text-muted-foreground">Analytics</span>
                 </div>
               </SidebarMenuButton>

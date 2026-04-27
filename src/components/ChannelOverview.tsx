@@ -15,10 +15,10 @@ function formatNumber(num: number): string {
 }
 
 const STATS = (stats: ChannelStats) => [
-  { icon: Users,      label: "Subscribers", value: formatNumber(stats.subscriberCount), iconCn: "text-blue-500",   bgCn: "bg-blue-500/10"   },
-  { icon: Eye,        label: "Total Views",  value: formatNumber(stats.viewCount),       iconCn: "text-violet-500", bgCn: "bg-violet-500/10" },
-  { icon: PlayCircle, label: "Videos",       value: stats.videoCount.toString(),         iconCn: "text-destructive",bgCn: "bg-destructive/10"},
-  { icon: Clock,      label: "Avg Duration", value: stats.avgViewDuration,               iconCn: "text-amber-500",  bgCn: "bg-amber-500/10"  },
+  { icon: Users,      label: "Subscribers", value: formatNumber(stats.subscriberCount), iconCn: "text-primary",          bgCn: "bg-primary/10"   },
+  { icon: Eye,        label: "Total Views",  value: formatNumber(stats.viewCount),       iconCn: "text-muted-foreground",  bgCn: "bg-muted"        },
+  { icon: PlayCircle, label: "Videos",       value: stats.videoCount.toString(),         iconCn: "text-primary",          bgCn: "bg-primary/10"   },
+  { icon: Clock,      label: "Avg Duration", value: stats.avgViewDuration,               iconCn: "text-warning",          bgCn: "bg-warning/10"   },
 ];
 
 export default function ChannelOverview({ stats }: ChannelOverviewProps) {

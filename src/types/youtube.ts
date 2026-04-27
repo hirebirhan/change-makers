@@ -51,3 +51,16 @@ export interface YouTubeApiResponse {
   dailyMetrics: DailyMetric[];
   reports: MonthlyReport[];
 }
+
+export interface Comment {
+  id: string;
+  videoId: string;
+  videoTitle: string;
+  author: string;
+  authorProfileImageUrl: string;
+  text: string;
+  likeCount: number;
+  replyCount: number;
+  publishedAt: string;
+  sentiment: "positive" | "neutral" | "negative";
+}
