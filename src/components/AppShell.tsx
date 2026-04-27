@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LogOut, LayoutDashboard, PlaySquare, Sparkles, RefreshCw, MessageCircle, Brain, Type } from "lucide-react";
+import { LogOut, LayoutDashboard, PlaySquare, Sparkles, RefreshCw, MessageCircle, Brain, Type, TrendingUp, Lightbulb, Target } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,9 @@ import { ChannelStats } from "@/types/youtube";
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/videos", label: "Videos", icon: PlaySquare },
+  { href: "/performance", label: "Performance", icon: TrendingUp },
+  { href: "/insights", label: "Content Insights", icon: Lightbulb },
+  { href: "/growth", label: "Growth", icon: Target },
   { href: "/comments", label: "Comments", icon: MessageCircle },
   { href: "/seo", label: "SEO Studio", icon: Sparkles },
   { href: "/title-ranker", label: "Title Ranker", icon: Type },

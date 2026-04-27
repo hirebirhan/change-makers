@@ -139,24 +139,24 @@ function SummaryCards({ seo }: { seo: SeoData }) {
   const poor = seo.videoScores.filter(v => v.score < 50).length;
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-4 gap-2">
       {[
-        { label: "Avg SEO Score", value: `${avg}`, sub: "out of 100", icon: Trophy, iconCn: "text-primary", bg: "bg-primary/5" },
-        { label: "Well Optimised", value: `${good}`, sub: "videos ≥ 75", icon: CheckCircle2, iconCn: "text-success", bg: "bg-success/5" },
-        { label: "Need Attention", value: `${poor}`, sub: "videos < 50", icon: AlertCircle, iconCn: "text-destructive", bg: "bg-destructive/5" },
-        { label: "Tag Gaps", value: `${seo.tagGaps.length}`, sub: "trending topics missed", icon: Tag, iconCn: "text-warning", bg: "bg-warning/5" },
+        { label: "Avg Score", value: `${avg}`, sub: "/100", icon: Trophy, iconCn: "text-primary", bg: "bg-primary/5" },
+        { label: "Optimized", value: `${good}`, sub: "videos", icon: CheckCircle2, iconCn: "text-success", bg: "bg-success/5" },
+        { label: "Needs Work", value: `${poor}`, sub: "videos", icon: AlertCircle, iconCn: "text-destructive", bg: "bg-destructive/5" },
+        { label: "Tag Gaps", value: `${seo.tagGaps.length}`, sub: "topics", icon: Tag, iconCn: "text-warning", bg: "bg-warning/5" },
       ].map(({ label, value, sub, icon: Icon, iconCn, bg }) => (
         <Card key={label} size="sm" className="border-border/40">
-          <CardHeader>
-            <div className="flex items-center gap-2.5">
-              <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
-                <Icon className={`size-4 ${iconCn}`} />
+          <CardHeader className="space-y-0">
+            <div className="flex items-center justify-between mb-1.5">
+              <CardDescription className="text-[10px] font-medium uppercase tracking-wide">{label}</CardDescription>
+              <div className={`w-6 h-6 rounded-lg ${bg} flex items-center justify-center shrink-0`}>
+                <Icon className={`size-3 ${iconCn}`} />
               </div>
-              <CardDescription className="text-xs font-medium">{label}</CardDescription>
             </div>
-            <div className="flex items-baseline gap-2 mt-1">
-              <CardTitle className="text-3xl tabular-nums font-bold">{value}</CardTitle>
-              <span className="text-xs text-muted-foreground font-normal">{sub}</span>
+            <div className="flex items-baseline gap-1">
+              <CardTitle className="text-2xl tabular-nums font-bold">{value}</CardTitle>
+              <span className="text-[10px] text-muted-foreground font-normal">{sub}</span>
             </div>
           </CardHeader>
         </Card>
@@ -190,25 +190,20 @@ export function SeoView({ initialData }: { initialData: YouTubeApiResponse }) {
 
   return (
     <AppShell channel={data.channel} onRefresh={refresh} refreshing={refreshing} lastUpdated={lastUpdated}>
-      <main className="flex-1 w-full px-6 py-8 space-y-8">
+      <main className="flex-1 w-full px-4 py-4 space-y-4">
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-primary" />
-              </div>
-              SEO Studio
-            </h1>
-            <p className="text-sm text-muted-foreground mt-2 ml-[52px]">Keyword insights, video scores & Google Trends</p>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">SEO Studio</h1>
+            <p className="text-xs text-muted-foreground mt-1">Optimize your content for better discoverability</p>
           </div>
           <div className="flex items-center gap-2">
-            <Globe className="w-4 h-4 text-muted-foreground shrink-0" />
+            <Globe className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
             <select
               value={geo}
               onChange={(e) => setGeo(e.target.value)}
-              className="h-9 rounded-xl border border-border/40 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-ring"
+              className="h-8 rounded-lg border border-border/40 bg-background px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-ring"
             >
               {GEO_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
@@ -217,96 +212,89 @@ export function SeoView({ initialData }: { initialData: YouTubeApiResponse }) {
 
         {/* Summary cards */}
         {seoLoading ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}
+          <div className="grid grid-cols-4 gap-2">
+            {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}
           </div>
         ) : seo && <SummaryCards seo={seo} />}
 
-        <Tabs defaultValue="scores" className="space-y-6">
-          <TabsList className="bg-muted/30 p-1">
-            <TabsTrigger value="scores" className="gap-2"><Trophy className="w-3.5 h-3.5" />Video Scores</TabsTrigger>
-            <TabsTrigger value="trends" className="gap-2"><TrendingUp className="w-3.5 h-3.5" />Trends</TabsTrigger>
-            <TabsTrigger value="keywords" className="gap-2"><BarChart2 className="w-3.5 h-3.5" />Keywords</TabsTrigger>
-            <TabsTrigger value="titles" className="gap-2"><Lightbulb className="w-3.5 h-3.5" />Title Ideas</TabsTrigger>
-            <TabsTrigger value="practices" className="gap-2"><BookOpen className="w-3.5 h-3.5" />Best Practices</TabsTrigger>
+        <Tabs defaultValue="scores" className="space-y-4">
+          <TabsList className="bg-muted/30 p-0.5 h-9">
+            <TabsTrigger value="scores" className="gap-1.5 text-xs h-8"><Trophy className="w-3 h-3" />Scores</TabsTrigger>
+            <TabsTrigger value="trends" className="gap-1.5 text-xs h-8"><TrendingUp className="w-3 h-3" />Trends</TabsTrigger>
+            <TabsTrigger value="keywords" className="gap-1.5 text-xs h-8"><BarChart2 className="w-3 h-3" />Keywords</TabsTrigger>
+            <TabsTrigger value="titles" className="gap-1.5 text-xs h-8"><Lightbulb className="w-3 h-3" />Ideas</TabsTrigger>
+            <TabsTrigger value="practices" className="gap-1.5 text-xs h-8"><BookOpen className="w-3 h-3" />Tips</TabsTrigger>
           </TabsList>
 
           {/* ── Video Scores ── */}
           <TabsContent value="scores" className="space-y-0">
-            <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
               {/* Score list */}
-              <div className="xl:col-span-3 space-y-4">
-                {seoLoading ? <ScoreSkeleton /> : seo?.videoScores.map((v) => (
-                  <div key={v.id} className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-5 space-y-4 transition-all hover:shadow-lg hover:border-border/60">
-                    <div className="flex items-start gap-4">
-                      {/* Score circle */}
-                      <div className={`shrink-0 w-16 h-16 rounded-xl flex flex-col items-center justify-center ${scoreBg(v.score)}/10 border border-${scoreBg(v.score)}/20`}>
-                        <span className={`text-2xl font-bold tabular-nums leading-none ${scoreColor(v.score)}`}>{v.score}</span>
-                        <span className="text-[10px] text-muted-foreground mt-1">/ 100</span>
+              <div className="xl:col-span-2 space-y-2">
+                {seoLoading ? <ScoreSkeleton /> : seo?.videoScores.map((v) => {
+                  const scoreColorClass = v.score >= 75 ? 'text-green-600 dark:text-green-400' : v.score >= 50 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400';
+                  const scoreBgClass = v.score >= 75 ? 'bg-green-500/10 border-green-500/20' : v.score >= 50 ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-red-500/10 border-red-500/20';
+                  const progressBgClass = v.score >= 75 ? 'bg-green-500' : v.score >= 50 ? 'bg-yellow-500' : 'bg-red-500';
+                  
+                  return (
+                  <div key={v.id} className="rounded-lg border border-border/40 bg-card hover:bg-accent/5 p-3 transition-all hover:border-border/60 group">
+                    <div className="flex items-start gap-3">
+                      {/* Score badge */}
+                      <div className={`shrink-0 w-12 h-12 rounded-lg flex flex-col items-center justify-center border ${scoreBgClass}`}>
+                        <span className={`text-xl font-bold tabular-nums leading-none ${scoreColorClass}`}>{v.score}</span>
                       </div>
-                      <div className="flex-1 min-w-0 pt-1">
-                        <div className="flex items-center gap-2 mb-2.5">
-                          <p className="text-sm font-semibold truncate leading-snug">{v.title}</p>
-                          <a href={`https://www.youtube.com/watch?v=${v.id}`} target="_blank" rel="noopener noreferrer" className="shrink-0 text-muted-foreground hover:text-primary transition-colors">
-                            <ArrowUpRight className="w-4 h-4" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start gap-2 mb-1.5">
+                          <p className="text-xs font-semibold line-clamp-2 leading-snug flex-1">{v.title}</p>
+                          <a href={`https://www.youtube.com/watch?v=${v.id}`} target="_blank" rel="noopener noreferrer" className="shrink-0 text-muted-foreground hover:text-primary transition-colors opacity-0 group-hover:opacity-100">
+                            <ArrowUpRight className="w-3.5 h-3.5" />
                           </a>
                         </div>
-                        <div className="h-2.5 bg-muted/50 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full transition-all duration-700 ${scoreBg(v.score)}`} style={{ width: `${v.score}%` }} />
+                        <div className="h-1.5 bg-muted/50 rounded-full overflow-hidden mb-2">
+                          <div className={`h-full rounded-full transition-all duration-700 ${progressBgClass}`} style={{ width: `${v.score}%` }} />
                         </div>
+                        
+                        {v.issues.length > 0 && (
+                          <div className="space-y-1">
+                            {v.issues.slice(0, 2).map((issue) => (
+                              <p key={issue} className="text-[10px] text-muted-foreground flex items-center gap-1.5">
+                                <AlertCircle className="w-3 h-3 text-warning shrink-0" />
+                                <span className="line-clamp-1">{issue}</span>
+                              </p>
+                            ))}
+                            {v.issues.length > 2 && (
+                              <p className="text-[10px] text-muted-foreground pl-4.5">+{v.issues.length - 2} more issues</p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
-
-                    {v.issues.length > 0 ? (
-                      <div className="space-y-2 pl-20">
-                        {v.issues.map((issue) => (
-                          <p key={issue} className="text-xs text-muted-foreground flex items-center gap-2">
-                            <AlertCircle className="w-3.5 h-3.5 text-warning shrink-0" />{issue}
-                          </p>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-success flex items-center gap-2 pl-20">
-                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />All checks passed
-                      </p>
-                    )}
-
-                    {v.suggestions.length > 0 && (
-                      <div className="border-t border-border/30 pt-4 space-y-2 pl-20">
-                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2.5">Suggestions</p>
-                        {v.suggestions.map((s, i) => (
-                          <p key={i} className="text-xs text-muted-foreground flex items-start gap-2 leading-relaxed">
-                            <Lightbulb className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />{s}
-                          </p>
-                        ))}
-                      </div>
-                    )}
                   </div>
-                ))}
+                )})}
               </div>
 
               {/* Right sidebar */}
-              <div className="xl:col-span-2 space-y-4">
+              <div className="xl:col-span-1 space-y-3">
                 {seo && (
                   <Card className="border-border/40">
                     <CardHeader>
-                      <CardTitle className="text-base">Score Distribution</CardTitle>
-                      <CardDescription>SEO health across your videos</CardDescription>
+                      <CardTitle className="text-sm">Distribution</CardTitle>
+                      <CardDescription className="text-xs">SEO health overview</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-5">
+                    <CardContent className="space-y-3">
                       {[
-                        { label: "Good", range: "75–100", count: seo.videoScores.filter(v => v.score >= 75).length, color: "bg-success", textColor: "text-success" },
-                        { label: "Needs work", range: "50–74", count: seo.videoScores.filter(v => v.score >= 50 && v.score < 75).length, color: "bg-warning", textColor: "text-warning" },
-                        { label: "Poor", range: "0–49", count: seo.videoScores.filter(v => v.score < 50).length, color: "bg-destructive", textColor: "text-destructive" },
+                        { label: "Good", range: "75+", count: seo.videoScores.filter(v => v.score >= 75).length, color: "bg-green-500", textColor: "text-green-600 dark:text-green-400" },
+                        { label: "Fair", range: "50-74", count: seo.videoScores.filter(v => v.score >= 50 && v.score < 75).length, color: "bg-yellow-500", textColor: "text-yellow-600 dark:text-yellow-400" },
+                        { label: "Poor", range: "<50", count: seo.videoScores.filter(v => v.score < 50).length, color: "bg-red-500", textColor: "text-red-600 dark:text-red-400" },
                       ].map(({ label, range, count, color, textColor }) => {
                         const pct = seo.videoScores.length ? Math.round((count / seo.videoScores.length) * 100) : 0;
                         return (
-                          <div key={label} className="space-y-2">
-                            <div className="flex items-center justify-between text-xs">
+                          <div key={label} className="space-y-1.5">
+                            <div className="flex items-center justify-between text-[10px]">
                               <span className="font-medium">{label} <span className="text-muted-foreground font-normal">({range})</span></span>
-                              <span className={`font-bold tabular-nums ${textColor}`}>{count} videos</span>
+                              <span className={`font-bold tabular-nums ${textColor}`}>{count}</span>
                             </div>
-                            <div className="h-2.5 bg-muted/50 rounded-full overflow-hidden">
+                            <div className="h-2 bg-muted/50 rounded-full overflow-hidden">
                               <div className={`h-full rounded-full ${color} transition-all duration-700`} style={{ width: `${pct}%` }} />
                             </div>
                           </div>
@@ -319,26 +307,23 @@ export function SeoView({ initialData }: { initialData: YouTubeApiResponse }) {
                 {seo && (
                   <Card className="border-border/40">
                     <CardHeader>
-                      <CardTitle className="text-base">Tag Gaps</CardTitle>
-                      <CardDescription>Trending topics missing from your tags</CardDescription>
+                      <CardTitle className="text-sm">Tag Gaps</CardTitle>
+                      <CardDescription className="text-xs">Missing trending topics</CardDescription>
                     </CardHeader>
                     <CardContent>
                       {seo.tagGaps.length === 0 ? (
-                        <div className="flex items-center gap-2 text-success text-sm">
-                          <CheckCircle2 className="w-4 h-4 shrink-0" />
-                          Great coverage — no major gaps found.
+                        <div className="flex items-center gap-2 text-success text-xs">
+                          <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                          No gaps found
                         </div>
                       ) : (
-                        <>
-                          <div className="flex flex-wrap gap-2">
-                            {seo.tagGaps.map((t) => (
-                              <Badge key={t} variant="destructive" className="gap-1.5 font-normal">
-                                <AlertCircle className="w-3 h-3" />{t}
-                              </Badge>
-                            ))}
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-3 leading-relaxed">Add these as tags or cover them in upcoming videos.</p>
-                        </>
+                        <div className="flex flex-wrap gap-1.5">
+                          {seo.tagGaps.map((t) => (
+                            <Badge key={t} variant="destructive" className="gap-1 font-normal text-[10px] h-5">
+                              {t}
+                            </Badge>
+                          ))}
+                        </div>
                       )}
                     </CardContent>
                   </Card>
@@ -351,28 +336,28 @@ export function SeoView({ initialData }: { initialData: YouTubeApiResponse }) {
 
           {/* ── Trends ── */}
           <TabsContent value="trends" className="space-y-0">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               <Card className="border-border/40">
                 <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
-                      <TrendingUp className="w-4 h-4 text-primary" />
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-primary/5 flex items-center justify-center">
+                      <TrendingUp className="w-3.5 h-3.5 text-primary" />
                     </div>
                     <div>
-                      <CardTitle className="text-base">Trending Now</CardTitle>
-                      <CardDescription>Top 20 in {GEO_OPTIONS.find(o => o.value === geo)?.label}</CardDescription>
+                      <CardTitle className="text-sm">Trending Now</CardTitle>
+                      <CardDescription className="text-[10px]">Top 20 in {GEO_OPTIONS.find(o => o.value === geo)?.label}</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
                   {seoLoading ? (
-                    <div className="flex flex-wrap gap-2">{[...Array(12)].map((_, i) => <Skeleton key={i} className="h-7 w-28 rounded-full" />)}</div>
+                    <div className="flex flex-wrap gap-1.5">{[...Array(12)].map((_, i) => <Skeleton key={i} className="h-6 w-24 rounded-full" />)}</div>
                   ) : (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1.5">
                       {seo?.trends.map((t, i) => (
                         <a key={t} href={`https://trends.google.com/trends/explore?q=${encodeURIComponent(t)}&geo=${geo}`} target="_blank" rel="noopener noreferrer">
-                          <Badge variant={i < 5 ? "default" : "secondary"} className="cursor-pointer hover:opacity-80 transition-opacity gap-1.5 font-normal">
-                            <span className="text-[10px] opacity-60">#{i + 1}</span>{t}
+                          <Badge variant={i < 5 ? "default" : "secondary"} className="cursor-pointer hover:opacity-80 transition-opacity gap-1 font-normal text-[10px] h-6">
+                            <span className="text-[9px] opacity-60">#{i + 1}</span>{t}
                           </Badge>
                         </a>
                       ))}
@@ -383,28 +368,25 @@ export function SeoView({ initialData }: { initialData: YouTubeApiResponse }) {
 
               <Card className="border-border/40">
                 <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-destructive/5 flex items-center justify-center">
-                      <Tag className="w-4 h-4 text-destructive" />
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-destructive/5 flex items-center justify-center">
+                      <Tag className="w-3.5 h-3.5 text-destructive" />
                     </div>
                     <div>
-                      <CardTitle className="text-base">Tag Gaps</CardTitle>
-                      <CardDescription>Trending topics not in your tags</CardDescription>
+                      <CardTitle className="text-sm">Tag Gaps</CardTitle>
+                      <CardDescription className="text-[10px]">Topics not in your tags</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
                   {seoLoading ? (
-                    <div className="flex flex-wrap gap-2">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-7 w-28 rounded-full" />)}</div>
+                    <div className="flex flex-wrap gap-1.5">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-6 w-24 rounded-full" />)}</div>
                   ) : seo?.tagGaps.length === 0 ? (
-                    <div className="flex items-center gap-2 text-success text-sm"><CheckCircle2 className="w-4 h-4" />Great coverage — no gaps found.</div>
+                    <div className="flex items-center gap-2 text-success text-xs"><CheckCircle2 className="w-3.5 h-3.5" />No gaps found</div>
                   ) : (
-                    <>
-                      <div className="flex flex-wrap gap-2">
-                        {seo?.tagGaps.map((t) => <Badge key={t} variant="destructive" className="font-normal">{t}</Badge>)}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-3 leading-relaxed">Consider adding these as tags or covering them in upcoming videos.</p>
-                    </>
+                    <div className="flex flex-wrap gap-1.5">
+                      {seo?.tagGaps.map((t) => <Badge key={t} variant="destructive" className="font-normal text-[10px] h-6">{t}</Badge>)}
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -415,35 +397,35 @@ export function SeoView({ initialData }: { initialData: YouTubeApiResponse }) {
           <TabsContent value="keywords" className="space-y-0">
             <Card className="border-border/40">
               <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
-                    <BarChart2 className="w-4 h-4 text-primary" />
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-primary/5 flex items-center justify-center">
+                    <BarChart2 className="w-3.5 h-3.5 text-primary" />
                   </div>
                   <div>
-                    <CardTitle className="text-base">Your Top Keywords</CardTitle>
-                    <CardDescription>Extracted from titles & tags, ranked by total views driven</CardDescription>
+                    <CardTitle className="text-sm">Top Keywords</CardTitle>
+                    <CardDescription className="text-[10px]">Ranked by total views driven</CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 {seoLoading ? (
-                  <div className="space-y-3.5">{[...Array(10)].map((_, i) => <Skeleton key={i} className="h-6 w-full rounded-lg" />)}</div>
+                  <div className="space-y-2">{[...Array(10)].map((_, i) => <Skeleton key={i} className="h-5 w-full rounded-lg" />)}</div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {seo?.keywords.map((kw, i) => {
                       const maxViews = seo.keywords[0]?.totalViews || 1;
                       const pct = Math.round((kw.totalViews / maxViews) * 100);
                       return (
-                        <div key={kw.keyword} className="flex items-center gap-3.5 group">
-                          <span className="text-xs text-muted-foreground w-7 text-right shrink-0 tabular-nums font-medium">#{i + 1}</span>
-                          <span className="text-sm font-medium w-36 shrink-0 truncate">{kw.keyword}</span>
-                          <div className="flex-1 h-2.5 bg-muted/50 rounded-full overflow-hidden">
+                        <div key={kw.keyword} className="flex items-center gap-2.5 group">
+                          <span className="text-[10px] text-muted-foreground w-6 text-right shrink-0 tabular-nums font-medium">#{i + 1}</span>
+                          <span className="text-xs font-medium w-32 shrink-0 truncate">{kw.keyword}</span>
+                          <div className="flex-1 h-2 bg-muted/50 rounded-full overflow-hidden">
                             <div className="h-full bg-primary rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
                           </div>
-                          <span className="text-xs text-muted-foreground w-24 text-right shrink-0 tabular-nums">
-                            {kw.totalViews >= 1000 ? (kw.totalViews / 1000).toFixed(1) + "K" : kw.totalViews} views
+                          <span className="text-[10px] text-muted-foreground w-16 text-right shrink-0 tabular-nums">
+                            {kw.totalViews >= 1000 ? (kw.totalViews / 1000).toFixed(1) + "K" : kw.totalViews}
                           </span>
-                          <Badge variant="outline" className="text-[10px] shrink-0 w-11 justify-center font-normal">{kw.count}×</Badge>
+                          <Badge variant="outline" className="text-[9px] shrink-0 w-9 justify-center font-normal h-5">{kw.count}×</Badge>
                         </div>
                       );
                     })}
@@ -455,23 +437,23 @@ export function SeoView({ initialData }: { initialData: YouTubeApiResponse }) {
 
           {/* ── Title Ideas ── */}
           <TabsContent value="titles" className="space-y-0">
-            <div className="space-y-5">
+            <div className="space-y-3">
               <div>
-                <h2 className="text-base font-semibold">Title Suggestions</h2>
-                <p className="text-sm text-muted-foreground mt-1">Generated from your top keywords and current trends</p>
+                <h2 className="text-sm font-semibold">Title Suggestions</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">Based on your top keywords and trends</p>
               </div>
               {seoLoading ? (
-                <div className="space-y-3">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-2xl" />)}</div>
+                <div className="space-y-2">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}</div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {seo?.titleSuggestions.map((s, i) => (
-                    <div key={i} className="p-5 rounded-2xl border border-border/40 bg-card/50 hover:shadow-lg hover:border-border/60 transition-all space-y-2.5">
-                      <div className="flex items-start gap-2.5">
-                        <span className="text-xs font-bold text-primary tabular-nums mt-0.5 shrink-0">#{i + 1}</span>
-                        <p className="text-sm font-semibold leading-snug">{s.suggestion}</p>
+                    <div key={i} className="p-3 rounded-lg border border-border/40 bg-card hover:bg-accent/5 hover:border-border/60 transition-all space-y-1.5">
+                      <div className="flex items-start gap-2">
+                        <span className="text-[10px] font-bold text-primary tabular-nums mt-0.5 shrink-0">#{i + 1}</span>
+                        <p className="text-xs font-semibold leading-snug">{s.suggestion}</p>
                       </div>
-                      <p className="text-xs text-muted-foreground flex items-start gap-2 pl-6 leading-relaxed">
-                        <Lightbulb className="w-3.5 h-3.5 shrink-0 mt-0.5 text-primary" />{s.reason}
+                      <p className="text-[10px] text-muted-foreground flex items-start gap-1.5 pl-5 leading-relaxed">
+                        <Lightbulb className="w-3 h-3 shrink-0 mt-0.5 text-primary" />{s.reason}
                       </p>
                     </div>
                   ))}
@@ -482,22 +464,22 @@ export function SeoView({ initialData }: { initialData: YouTubeApiResponse }) {
 
           {/* ── Best Practices ── */}
           <TabsContent value="practices" className="space-y-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
               {BEST_PRACTICES.map(({ category, icon: Icon, color, bg, tips }) => (
-                <Card key={category} className="border-border/40 hover:shadow-lg hover:border-border/60 transition-all">
+                <Card key={category} className="border-border/40 hover:border-border/60 transition-all">
                   <CardHeader>
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${bg}`}>
-                        <Icon className={`w-4 h-4 ${color}`} />
+                    <div className="flex items-center gap-2">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${bg}`}>
+                        <Icon className={`w-3.5 h-3.5 ${color}`} />
                       </div>
-                      <CardTitle className="text-base">{category}</CardTitle>
+                      <CardTitle className="text-sm">{category}</CardTitle>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <ul className="space-y-3">
+                    <ul className="space-y-2">
                       {tips.map((tip, i) => (
-                        <li key={i} className="flex items-start gap-2.5 text-xs text-muted-foreground leading-relaxed">
-                          <span className={`mt-0.5 shrink-0 font-bold text-base leading-none ${color}`}>·</span>
+                        <li key={i} className="flex items-start gap-2 text-[10px] text-muted-foreground leading-relaxed">
+                          <span className={`mt-0.5 shrink-0 font-bold text-sm leading-none ${color}`}>·</span>
                           {tip}
                         </li>
                       ))}

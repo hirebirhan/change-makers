@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { AppShell } from "@/components/AppShell";
 import ChannelOverview from "@/components/ChannelOverview";
 import AnalyticsChart from "@/components/AnalyticsChart";
 import VideoCard from "@/components/VideoCard";
 import ReportsSection from "@/components/ReportsSection";
+import MonetizationProgress from "@/components/MonetizationProgress";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { YouTubeApiResponse } from "@/types/youtube";
 import { fetchYouTubeAnalytics } from "@/lib/youtube-api";
@@ -28,6 +29,11 @@ export function DashboardView({ initialData }: { initialData: YouTubeApiResponse
 
   const shorts = data.videos.filter(v => v.isShort);
   const regularVideos = data.videos.filter(v => !v.isShort);
+
+  // Calculate total watch time hours from daily metrics (last 12 months approximation)
+  const totalWatchTimeHours = useMemo(() => {
+    return data.dailyMetrics.reduce((sum, metric) => sum + metric.watchTimeHours, 0);
+  }, [data.dailyMetrics]);
 
   return (
     <AppShell channel={data.channel} onRefresh={refresh} refreshing={refreshing} lastUpdated={lastUpdated}>
@@ -54,6 +60,8 @@ export function DashboardView({ initialData }: { initialData: YouTubeApiResponse
             </CardContent>
           </Card>
         </div>
+
+        <MonetizationProgress stats={data.channel} totalWatchTimeHours={totalWatchTimeHours} />
 
         {shorts.length > 0 && (
           <Card>

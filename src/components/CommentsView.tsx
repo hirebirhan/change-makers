@@ -6,10 +6,14 @@ import { AppShell } from "@/components/AppShell";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Comment, YouTubeApiResponse } from "@/types/youtube";
 import { fetchYouTubeAnalytics } from "@/lib/youtube-api";
-import { ThumbsUp, MessageCircle, Search, SmilePlus, Meh, Frown, User, MessageSquare } from "lucide-react";
+import { ThumbsUp, MessageCircle, Search, SmilePlus, Meh, Frown, User, ChevronLeft, ChevronRight } from "lucide-react";
+
+const COMMENTS_PER_PAGE = 20;
+import { Skeleton } from "./ui/skeleton";
 
 interface CommentSummary {
   positive: number;
@@ -42,9 +46,9 @@ function CommentAvatar({ src, alt, size = 32 }: { src: string; alt: string; size
 }
 
 function sentimentBadge(s: Comment["sentiment"]) {
-  if (s === "positive") return <Badge variant="secondary" className="text-green-600 dark:text-green-400 bg-green-500/10 border-green-500/20 text-[10px]"><SmilePlus className="w-2.5 h-2.5 mr-1" />Positive</Badge>;
-  if (s === "negative") return <Badge variant="destructive" className="text-[10px]"><Frown className="w-2.5 h-2.5 mr-1" />Negative</Badge>;
-  return <Badge variant="outline" className="text-[10px]"><Meh className="w-2.5 h-2.5 mr-1" />Neutral</Badge>;
+  if (s === "positive") return <Badge variant="secondary" className="text-green-600 dark:text-green-400 bg-green-500/10 border-green-500/20 text-[10px] h-4 px-1.5"><SmilePlus className="w-2.5 h-2.5 mr-0.5" />Positive</Badge>;
+  if (s === "negative") return <Badge variant="destructive" className="text-[10px] h-4 px-1.5"><Frown className="w-2.5 h-2.5 mr-0.5" />Negative</Badge>;
+  return <Badge variant="outline" className="text-[10px] h-4 px-1.5"><Meh className="w-2.5 h-2.5 mr-0.5" />Neutral</Badge>;
 }
 
 export function CommentsView({ initialData }: { initialData: YouTubeApiResponse }) {
@@ -57,6 +61,7 @@ export function CommentsView({ initialData }: { initialData: YouTubeApiResponse 
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [sentiment, setSentiment] = useState<"all" | Comment["sentiment"]>("all");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
@@ -91,28 +96,31 @@ export function CommentsView({ initialData }: { initialData: YouTubeApiResponse 
       .finally(() => setLoading(false));
   }, [data]);
 
-  const filtered = useMemo(() => comments
-    .filter((c) => sentiment === "all" || c.sentiment === sentiment)
-    .filter((c) => c.text.toLowerCase().includes(query.toLowerCase()) || c.author.toLowerCase().includes(query.toLowerCase())),
-    [comments, sentiment, query]
-  );
+  const filtered = useMemo(() => {
+    const result = comments
+      .filter((c) => sentiment === "all" || c.sentiment === sentiment)
+      .filter((c) => c.text.toLowerCase().includes(query.toLowerCase()) || c.author.toLowerCase().includes(query.toLowerCase()));
+    setCurrentPage(1); // Reset to first page when filters change
+    return result;
+  }, [comments, sentiment, query]);
+
+  const totalPages = Math.ceil(filtered.length / COMMENTS_PER_PAGE);
+  const paginatedComments = useMemo(() => {
+    const start = (currentPage - 1) * COMMENTS_PER_PAGE;
+    return filtered.slice(start, start + COMMENTS_PER_PAGE);
+  }, [filtered, currentPage]);
 
   return (
     <AppShell channel={data.channel} onRefresh={refresh} refreshing={refreshing} lastUpdated={lastUpdated}>
-      <main className="flex-1 w-full px-6 py-8 space-y-6">
+      <main className="flex-1 w-full px-4 py-4 space-y-4">
         {/* Header */}
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
-              <MessageSquare className="w-5 h-5 text-primary" />
-            </div>
-            Comments
-          </h1>
-          <p className="text-sm text-muted-foreground mt-2 ml-[52px]">Sentiment analysis and browsing of comments across all your videos</p>
+        <div>
+          <h1 className="text-xl font-bold tracking-tight">Comments</h1>
+          <p className="text-xs text-muted-foreground mt-1">Sentiment analysis across all your videos</p>
         </div>
 
         {summary && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-4 gap-2">
             {[
               { label: "Total", value: summary.total, icon: MessageCircle, bg: "bg-muted", iconCn: "text-muted-foreground", valueCn: "text-foreground" },
               { label: "Positive", value: summary.positive, icon: SmilePlus, bg: "bg-green-500/10", iconCn: "text-green-600 dark:text-green-400", valueCn: "text-green-600 dark:text-green-400" },
@@ -120,14 +128,14 @@ export function CommentsView({ initialData }: { initialData: YouTubeApiResponse 
               { label: "Negative", value: summary.negative, icon: Frown, bg: "bg-red-500/10", iconCn: "text-red-600 dark:text-red-400", valueCn: "text-red-600 dark:text-red-400" },
             ].map(({ label, value, icon: Icon, bg, iconCn, valueCn }) => (
               <Card key={label} size="sm">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
+                <CardHeader className="space-y-0">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <CardDescription className="text-[10px] font-medium uppercase tracking-wide">{label}</CardDescription>
                     <div className={`w-6 h-6 rounded-lg ${bg} flex items-center justify-center`}>
                       <Icon className={`size-3 ${iconCn}`} />
                     </div>
-                    <CardDescription className="text-[10px]">{label}</CardDescription>
                   </div>
-                  <CardTitle className={`text-lg tabular-nums ${valueCn}`}>{value.toLocaleString()}</CardTitle>
+                  <CardTitle className={`text-2xl tabular-nums ${valueCn}`}>{value.toLocaleString()}</CardTitle>
                 </CardHeader>
               </Card>
             ))}
@@ -136,141 +144,240 @@ export function CommentsView({ initialData }: { initialData: YouTubeApiResponse 
 
         {summary && (
           <Card size="sm">
-            <CardHeader>
-              <CardDescription>Sentiment Distribution</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-2 rounded-full overflow-hidden flex">
+            <CardContent className="py-3">
+              <div className="h-1.5 rounded-full overflow-hidden flex">
                 <div className="bg-green-500" style={{ width: `${(summary.positive / summary.total) * 100}%` }} />
                 <div className="bg-gray-400 dark:bg-gray-600" style={{ width: `${(summary.neutral / summary.total) * 100}%` }} />
                 <div className="bg-red-500" style={{ width: `${(summary.negative / summary.total) * 100}%` }} />
               </div>
               <div className="flex items-center justify-between mt-2 text-[10px]">
-                <span className="text-green-600 dark:text-green-400">Positive {Math.round((summary.positive / summary.total) * 100)}%</span>
-                <span className="text-gray-600 dark:text-gray-400">Neutral {Math.round((summary.neutral / summary.total) * 100)}%</span>
-                <span className="text-red-600 dark:text-red-400">Negative {Math.round((summary.negative / summary.total) * 100)}%</span>
+                <span className="text-green-600 dark:text-green-400">{Math.round((summary.positive / summary.total) * 100)}% Positive</span>
+                <span className="text-gray-600 dark:text-gray-400">{Math.round((summary.neutral / summary.total) * 100)}% Neutral</span>
+                <span className="text-red-600 dark:text-red-400">{Math.round((summary.negative / summary.total) * 100)}% Negative</span>
               </div>
             </CardContent>
           </Card>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center justify-between">
           <div className="relative w-full sm:w-auto">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <Input 
               placeholder="Search comments or authors…" 
               value={query} 
               onChange={(e) => setQuery(e.target.value)} 
-              className="pl-10 h-10 w-full sm:w-80 text-sm border-border/40" 
+              className="pl-9 h-8 w-full sm:w-72 text-xs border-border/40" 
             />
           </div>
           <Tabs value={sentiment} onValueChange={(v) => setSentiment(v as typeof sentiment)} className="w-full sm:w-auto">
-            <TabsList className="w-full sm:w-auto">
-              <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
-              <TabsTrigger value="positive" className="text-xs">Positive</TabsTrigger>
-              <TabsTrigger value="neutral" className="text-xs">Neutral</TabsTrigger>
-              <TabsTrigger value="negative" className="text-xs">Negative</TabsTrigger>
+            <TabsList className="w-full sm:w-auto h-8 p-0.5">
+              <TabsTrigger value="all" className="text-xs h-7">All</TabsTrigger>
+              <TabsTrigger value="positive" className="text-xs h-7">Positive</TabsTrigger>
+              <TabsTrigger value="neutral" className="text-xs h-7">Neutral</TabsTrigger>
+              <TabsTrigger value="negative" className="text-xs h-7">Negative</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 gap-2">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} size="sm"><CardContent className="h-20 animate-pulse bg-muted/30 rounded-lg" /></Card>
+          <div className="space-y-1.5">
+            {[...Array(8)].map((_, i) => (
+              <Skeleton key={i} className="h-14 w-full rounded-lg" />
             ))}
           </div>
         ) : error ? (
-          <Card size="sm"><CardContent className="py-8 text-center text-xs text-destructive">{error}</CardContent></Card>
+          <Card size="sm"><CardContent className="py-6 text-center text-xs text-destructive">{error}</CardContent></Card>
         ) : filtered.length === 0 ? (
           <Card className="border-border/40">
-            <CardContent className="py-16 text-center">
-              <MessageCircle className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
-              <p className="text-sm font-medium">No comments found</p>
-              <p className="text-xs text-muted-foreground mt-1">Try adjusting your search or sentiment filters</p>
+            <CardContent className="py-10 text-center">
+              <MessageCircle className="w-8 h-8 mx-auto text-muted-foreground/30 mb-2" />
+              <p className="text-xs font-medium">No comments found</p>
+              <p className="text-[10px] text-muted-foreground mt-1">Try adjusting your filters</p>
             </CardContent>
           </Card>
         ) : (
-          <Tabs defaultValue="feed" className="space-y-6">
-            <TabsList>
-              <TabsTrigger value="feed" className="gap-2"><MessageCircle className="w-3.5 h-3.5" />Comment Feed</TabsTrigger>
-              <TabsTrigger value="byVideo" className="gap-2"><ThumbsUp className="w-3.5 h-3.5" />By Video</TabsTrigger>
+          <Tabs defaultValue="feed" className="space-y-3">
+            <TabsList className="h-8 p-0.5">
+              <TabsTrigger value="feed" className="gap-1.5 text-xs h-7"><MessageCircle className="w-3 h-3" />Feed</TabsTrigger>
+              <TabsTrigger value="byVideo" className="gap-1.5 text-xs h-7"><ThumbsUp className="w-3 h-3" />By Video</TabsTrigger>
             </TabsList>
 
             <TabsContent value="feed" className="mt-0">
-              <div className="grid grid-cols-1 gap-2">
-                {filtered.map((comment) => (
-                  <Card key={comment.id} size="sm">
-                    <CardContent className="pt-3">
-                      <div className="flex gap-3">
-                        <CommentAvatar src={comment.authorProfileImageUrl} alt={comment.author} size={32} />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <span className="text-xs font-semibold">{comment.author}</span>
-                            <span className="text-[10px] text-muted-foreground">·</span>
-                            <span className="text-[10px] text-muted-foreground">{timeAgo(comment.publishedAt)}</span>
-                            {sentimentBadge(comment.sentiment)}
-                          </div>
-                          <p className="text-xs text-foreground leading-relaxed mb-2">{comment.text}</p>
-                          <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                            <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" />{comment.likeCount.toLocaleString()}</span>
-                            {comment.replyCount > 0 && <span className="flex items-center gap-1"><MessageCircle className="w-3 h-3" />{comment.replyCount} replies</span>}
-                            <span className="ml-auto truncate max-w-[180px] text-muted-foreground/60 italic">{comment.videoTitle}</span>
-                          </div>
+              <div className="space-y-1.5">
+                {paginatedComments.map((comment) => (
+                  <div key={comment.id} className="rounded-lg border border-border/40 bg-card hover:bg-accent/5 p-2.5 transition-all">
+                    <div className="flex gap-2.5">
+                      <CommentAvatar src={comment.authorProfileImageUrl} alt={comment.author} size={28} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                          <span className="text-[11px] font-semibold">{comment.author}</span>
+                          <span className="text-[9px] text-muted-foreground">·</span>
+                          <span className="text-[9px] text-muted-foreground">{timeAgo(comment.publishedAt)}</span>
+                          {sentimentBadge(comment.sentiment)}
+                        </div>
+                        <p className="text-[11px] text-foreground leading-relaxed mb-1.5">{comment.text}</p>
+                        <div className="flex items-center gap-2.5 text-[9px] text-muted-foreground">
+                          <span className="flex items-center gap-1"><ThumbsUp className="w-2.5 h-2.5" />{comment.likeCount.toLocaleString()}</span>
+                          {comment.replyCount > 0 && <span className="flex items-center gap-1"><MessageCircle className="w-2.5 h-2.5" />{comment.replyCount}</span>}
+                          <span className="ml-auto truncate max-w-[200px] text-muted-foreground/60 italic text-[9px]">{comment.videoTitle}</span>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 ))}
               </div>
+              
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/40">
+                  <p className="text-xs text-muted-foreground">
+                    Showing {((currentPage - 1) * COMMENTS_PER_PAGE) + 1}-{Math.min(currentPage * COMMENTS_PER_PAGE, filtered.length)} of {filtered.length} comments
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="h-7 w-7 p-0"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={currentPage === pageNum ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(pageNum)}
+                            className="h-7 w-7 p-0 text-xs"
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="h-7 w-7 p-0"
+                    >
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="byVideo" className="mt-0">
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 {data.videos.sort((a, b) => b.viewCount - a.viewCount).map((video) => {
-                  const videoComments = filtered.filter((c) => c.videoId === video.id);
+                  const videoComments = paginatedComments.filter((c) => c.videoId === video.id);
                   if (!videoComments.length) return null;
                   return (
                     <div key={video.id}>
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-1.5">
                         <a 
                           href={`https://www.youtube.com/watch?v=${video.id}`} 
                           target="_blank" 
                           rel="noopener noreferrer" 
-                          className="text-xs font-semibold hover:text-primary transition-colors line-clamp-1 flex-1"
+                          className="text-[11px] font-semibold hover:text-primary transition-colors line-clamp-1 flex-1"
                         >
                           {video.title}
                         </a>
-                        <Badge variant="secondary" className="shrink-0 text-[10px] bg-secondary/50">{videoComments.length}</Badge>
+                        <Badge variant="secondary" className="shrink-0 text-[9px] bg-secondary/50 h-4 px-1.5">{videoComments.length}</Badge>
                       </div>
-                      <div className="grid grid-cols-1 gap-2">
+                      <div className="space-y-1.5">
                         {videoComments.map((comment) => (
-                          <Card key={comment.id} size="sm">
-                            <CardContent className="pt-3">
-                              <div className="flex gap-3">
-                                <CommentAvatar src={comment.authorProfileImageUrl} alt={comment.author} size={28} />
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 flex-wrap mb-1">
-                                    <span className="text-xs font-semibold">{comment.author}</span>
-                                    <span className="text-[10px] text-muted-foreground">·</span>
-                                    <span className="text-[10px] text-muted-foreground">{timeAgo(comment.publishedAt)}</span>
-                                    {sentimentBadge(comment.sentiment)}
-                                  </div>
-                                  <p className="text-xs text-foreground leading-relaxed mb-1.5">{comment.text}</p>
-                                  <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                                    <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" />{comment.likeCount.toLocaleString()}</span>
-                                    {comment.replyCount > 0 && <span className="flex items-center gap-1"><MessageCircle className="w-3 h-3" />{comment.replyCount} replies</span>}
-                                  </div>
+                          <div key={comment.id} className="rounded-lg border border-border/40 bg-card hover:bg-accent/5 p-2.5 transition-all">
+                            <div className="flex gap-2.5">
+                              <CommentAvatar src={comment.authorProfileImageUrl} alt={comment.author} size={24} />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                                  <span className="text-[11px] font-semibold">{comment.author}</span>
+                                  <span className="text-[9px] text-muted-foreground">·</span>
+                                  <span className="text-[9px] text-muted-foreground">{timeAgo(comment.publishedAt)}</span>
+                                  {sentimentBadge(comment.sentiment)}
+                                </div>
+                                <p className="text-[11px] text-foreground leading-relaxed mb-1">{comment.text}</p>
+                                <div className="flex items-center gap-2.5 text-[9px] text-muted-foreground">
+                                  <span className="flex items-center gap-1"><ThumbsUp className="w-2.5 h-2.5" />{comment.likeCount.toLocaleString()}</span>
+                                  {comment.replyCount > 0 && <span className="flex items-center gap-1"><MessageCircle className="w-2.5 h-2.5" />{comment.replyCount}</span>}
                                 </div>
                               </div>
-                            </CardContent>
-                          </Card>
+                            </div>
+                          </div>
                         ))}
                       </div>
                     </div>
                   );
                 })}
               </div>
+              
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/40">
+                  <p className="text-xs text-muted-foreground">
+                    Showing {((currentPage - 1) * COMMENTS_PER_PAGE) + 1}-{Math.min(currentPage * COMMENTS_PER_PAGE, filtered.length)} of {filtered.length} comments
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="h-7 w-7 p-0"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={currentPage === pageNum ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(pageNum)}
+                            className="h-7 w-7 p-0 text-xs"
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="h-7 w-7 p-0"
+                    >
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         )}
