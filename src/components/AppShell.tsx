@@ -17,11 +17,11 @@ import {
 import { ChannelStats } from "@/types/youtube";
 
 const NAV = [
-  { href: "/",         label: "Dashboard",  icon: LayoutDashboard },
-  { href: "/videos",   label: "Videos",     icon: PlaySquare },
-  { href: "/comments", label: "Comments",   icon: MessageCircle },
-  { href: "/seo",      label: "SEO Studio", icon: Sparkles },
-  { href: "/ai",       label: "AI Studio",  icon: Brain },
+  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/videos", label: "Videos", icon: PlaySquare },
+  { href: "/comments", label: "Comments", icon: MessageCircle },
+  { href: "/seo", label: "SEO Studio", icon: Sparkles },
+  { href: "/ai", label: "AI Studio", icon: Brain },
 ];
 
 const YT_LOGO = (
@@ -45,16 +45,26 @@ export function AppShell({ children, channel, onRefresh, refreshing, lastUpdated
   return (
     <SidebarProvider>
       <Sidebar collapsible="icon">
-        <SidebarHeader>
+        <SidebarHeader className="border-b border-sidebar-border/70 p-3">
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton size="lg" render={<Link href="/" />}>
-                <div className="w-8 h-8 rounded-xl bg-yt-red flex items-center justify-center shadow-md shadow-destructive/30 shrink-0">
+              <SidebarMenuButton
+                size="lg"
+                className="h-12 gap-3 rounded-xl px-2 data-[state=open]:bg-sidebar-accent"
+                render={<Link href="/" />}
+              >
+                <div className="relative flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-red-700 shadow-sm ring-1 ring-red-500/20">
                   {YT_LOGO}
+                  <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-emerald-500 ring-2 ring-sidebar" />
                 </div>
-                <div className="flex flex-col leading-none">
-                  <span className="font-bold text-sm">Birhan tech corner</span>
-                  <span className="text-xs text-muted-foreground">Analytics</span>
+
+                <div className="grid flex-1 text-left leading-tight">
+                  <span className="truncate text-sm font-semibold tracking-tight">
+                    Birhan Tech Corner
+                  </span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    YouTube Analytics
+                  </span>
                 </div>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -119,8 +129,8 @@ export function AppShell({ children, channel, onRefresh, refreshing, lastUpdated
 
       <SidebarInset>
         {/* Top nav */}
-        <nav className="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-20 shadow-sm">
-          <div className="px-4 h-14 flex items-center justify-between gap-4">
+        <nav className="sticky top-0 z-20 h-14 border-b border-border bg-card/80 shadow-sm backdrop-blur-md">
+          <div className="flex h-full items-center justify-between gap-4 px-4">
             <SidebarTrigger />
             <div className="flex items-center gap-1 ml-auto">
               {lastUpdated && (
