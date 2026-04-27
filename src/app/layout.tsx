@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Change Maker Awards - Leaderboard",
-  description: "View the leaderboard of nominees across all categories for the Change Maker Awards",
+  title: "YouTube Analytics Dashboard",
+  description: "View your YouTube channel analytics, video performance, and reports",
 };
 
 export default function RootLayout({
