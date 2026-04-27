@@ -30,6 +30,8 @@ export interface DailyMetric {
   watchTimeHours: number;
   subscribersGained: number;
   subscribersLost: number;
+  subscribedViews: number;
+  unsubscribedViews: number;
 }
 
 export interface MonthlyReport {

@@ -2,33 +2,10 @@
 
 import { ChannelStats } from "@/types/youtube";
 import { Users, Eye, PlayCircle, Clock } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 interface ChannelOverviewProps {
   stats: ChannelStats;
-}
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  color,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: string;
-  color: string;
-}) {
-  return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-4">
-      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color}`}>
-        <Icon className="w-5 h-5 text-white" />
-      </div>
-      <div>
-        <p className="text-xs text-gray-500 uppercase tracking-wide">{label}</p>
-        <p className="text-xl font-bold text-gray-900">{value}</p>
-      </div>
-    </div>
-  );
 }
 
 function formatNumber(num: number): string {
@@ -37,46 +14,29 @@ function formatNumber(num: number): string {
   return num.toLocaleString();
 }
 
+const STATS = (stats: ChannelStats) => [
+  { icon: Users,      label: "Subscribers", value: formatNumber(stats.subscriberCount), iconCn: "text-blue-500",   bgCn: "bg-blue-500/10"   },
+  { icon: Eye,        label: "Total Views",  value: formatNumber(stats.viewCount),       iconCn: "text-violet-500", bgCn: "bg-violet-500/10" },
+  { icon: PlayCircle, label: "Videos",       value: stats.videoCount.toString(),         iconCn: "text-destructive",bgCn: "bg-destructive/10"},
+  { icon: Clock,      label: "Avg Duration", value: stats.avgViewDuration,               iconCn: "text-amber-500",  bgCn: "bg-amber-500/10"  },
+];
+
 export default function ChannelOverview({ stats }: ChannelOverviewProps) {
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center text-white text-2xl font-bold">
-          {stats.channelName.charAt(0)}
-        </div>
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">{stats.channelName}</h2>
-          <p className="text-sm text-gray-500">{stats.customUrl}</p>
-          <p className="text-xs text-gray-400 mt-1 line-clamp-1 max-w-md">{stats.channelDescription}</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard
-          icon={Users}
-          label="Subscribers"
-          value={formatNumber(stats.subscriberCount)}
-          color="bg-red-600"
-        />
-        <StatCard
-          icon={Eye}
-          label="Total Views"
-          value={formatNumber(stats.viewCount)}
-          color="bg-blue-600"
-        />
-        <StatCard
-          icon={PlayCircle}
-          label="Videos"
-          value={stats.videoCount.toString()}
-          color="bg-green-600"
-        />
-        <StatCard
-          icon={Clock}
-          label="Avg Duration"
-          value={stats.avgViewDuration}
-          color="bg-purple-600"
-        />
-      </div>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {STATS(stats).map(({ icon: Icon, label, value, iconCn, bgCn }) => (
+        <Card key={label} size="sm">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${bgCn} ${iconCn}`}>
+                <Icon className="size-3.5" />
+              </div>
+              <CardDescription className="text-xs">{label}</CardDescription>
+            </div>
+            <CardTitle className="text-xl tabular-nums">{value}</CardTitle>
+          </CardHeader>
+        </Card>
+      ))}
     </div>
   );
 }
