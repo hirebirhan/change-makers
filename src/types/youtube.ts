@@ -21,7 +21,9 @@ export interface Video {
   likeCount: number;
   commentCount: number;
   duration: string;
+  durationSeconds: number;
   tags: string[];
+  isShort: boolean;
 }
 
 export interface DailyMetric {

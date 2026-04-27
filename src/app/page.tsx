@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { getYouTubeData } from "@/lib/youtube-server";
-import DashboardViewWithAuth from "@/components/DashboardView";
+import { DashboardView } from "@/components/DashboardView";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -8,6 +10,13 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
+  const cookieStore = await cookies();
+  const isAuthenticated = cookieStore.get("yt_auth")?.value === "true";
+  
+  if (!isAuthenticated) {
+    redirect("/login");
+  }
+  
   const data = await getYouTubeData();
-  return <DashboardViewWithAuth initialData={data} />;
+  return <DashboardView initialData={data} />;
 }

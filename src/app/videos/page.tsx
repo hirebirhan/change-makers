@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { getYouTubeData } from "@/lib/youtube-server";
-import VideosViewWithAuth from "@/components/VideosView";
+import { VideosView } from "@/components/VideosView";
 
 export const metadata: Metadata = {
   title: "Video Library",
@@ -8,6 +10,13 @@ export const metadata: Metadata = {
 };
 
 export default async function VideosPage() {
+  const cookieStore = await cookies();
+  const isAuthenticated = cookieStore.get("yt_auth")?.value === "true";
+  
+  if (!isAuthenticated) {
+    redirect("/login");
+  }
+  
   const data = await getYouTubeData();
-  return <VideosViewWithAuth initialData={data} />;
+  return <VideosView initialData={data} />;
 }

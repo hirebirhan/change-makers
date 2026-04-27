@@ -2,8 +2,6 @@
 
 import { useState, useMemo, useCallback } from "react";
 import Image from "next/image";
-import { useAuth } from "@/lib/auth";
-import { LoginPage } from "@/components/LoginPage";
 import { AppShell } from "@/components/AppShell";
 import { VideoDetailSheet } from "@/components/VideoDetailSheet";
 import { Input } from "@/components/ui/input";
@@ -15,6 +13,7 @@ import { fetchYouTubeAnalytics } from "@/lib/youtube-api";
 import { Search, Eye, ThumbsUp, MessageCircle, Clock } from "lucide-react";
 
 type SortKey = "views" | "likes" | "comments" | "date";
+type FilterType = "all" | "videos" | "shorts";
 
 function formatNumber(n: number) {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
@@ -22,12 +21,13 @@ function formatNumber(n: number) {
   return n.toLocaleString();
 }
 
-function VideosView({ initialData }: { initialData: YouTubeApiResponse }) {
+export function VideosView({ initialData }: { initialData: YouTubeApiResponse }) {
   const [data, setData] = useState(initialData);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("views");
+  const [filter, setFilter] = useState<FilterType>("all");
   const [selected, setSelected] = useState<Video | null>(null);
 
   const refresh = useCallback(async () => {
@@ -43,42 +43,65 @@ function VideosView({ initialData }: { initialData: YouTubeApiResponse }) {
 
   const filtered = useMemo(() => {
     return data.videos
-      .filter((v) => v.title.toLowerCase().includes(query.toLowerCase()))
+      .filter((v) => {
+        const matchesQuery = v.title.toLowerCase().includes(query.toLowerCase());
+        const matchesFilter = 
+          filter === "all" ? true :
+          filter === "shorts" ? v.isShort :
+          !v.isShort;
+        return matchesQuery && matchesFilter;
+      })
       .sort((a, b) => {
         if (sort === "views") return b.viewCount - a.viewCount;
         if (sort === "likes") return b.likeCount - a.likeCount;
         if (sort === "comments") return b.commentCount - a.commentCount;
         return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
       });
-  }, [data, query, sort]);
+  }, [data, query, sort, filter]);
+
+  const counts = useMemo(() => ({
+    all: data.videos.length,
+    videos: data.videos.filter(v => !v.isShort).length,
+    shorts: data.videos.filter(v => v.isShort).length,
+  }), [data.videos]);
 
   return (
     <AppShell channel={data.channel} onRefresh={refresh} refreshing={refreshing} lastUpdated={lastUpdated}>
       <main className="flex-1 w-full px-6 py-8 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <div>
-            <h1 className="text-xl font-bold">Video Library</h1>
-            <p className="text-sm text-muted-foreground">{data.videos.length} videos</p>
-          </div>
-          <div className="flex items-center gap-3 sm:ml-auto">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Search videos…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="pl-8 h-8 w-56 text-sm"
-              />
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div>
+              <h1 className="text-xl font-bold">Video Library</h1>
+              <p className="text-sm text-muted-foreground">{filtered.length} of {data.videos.length} videos</p>
             </div>
-            <Tabs value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-              <TabsList>
-                <TabsTrigger value="views">Views</TabsTrigger>
-                <TabsTrigger value="likes">Likes</TabsTrigger>
-                <TabsTrigger value="comments">Comments</TabsTrigger>
-                <TabsTrigger value="date">Date</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="flex items-center gap-3 sm:ml-auto">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Search videos…"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  className="pl-8 h-8 w-56 text-sm"
+                />
+              </div>
+              <Tabs value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+                <TabsList>
+                  <TabsTrigger value="views">Views</TabsTrigger>
+                  <TabsTrigger value="likes">Likes</TabsTrigger>
+                  <TabsTrigger value="comments">Comments</TabsTrigger>
+                  <TabsTrigger value="date">Date</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
+          
+          <Tabs value={filter} onValueChange={(v) => setFilter(v as FilterType)}>
+            <TabsList>
+              <TabsTrigger value="all">All ({counts.all})</TabsTrigger>
+              <TabsTrigger value="videos">Videos ({counts.videos})</TabsTrigger>
+              <TabsTrigger value="shorts">Shorts ({counts.shorts})</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -104,9 +127,16 @@ function VideosView({ initialData }: { initialData: YouTubeApiResponse }) {
                     </svg>
                   </div>
                 )}
-                <span className="absolute bottom-1.5 right-1.5 bg-black/70 text-white text-[10px] font-medium px-1.5 py-0.5 rounded">
-                  {video.duration}
-                </span>
+                <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1.5">
+                  {video.isShort && (
+                    <span className="bg-yt-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                      SHORT
+                    </span>
+                  )}
+                  <span className="bg-black/70 text-white text-[10px] font-medium px-1.5 py-0.5 rounded">
+                    {video.duration}
+                  </span>
+                </div>
               </div>
               <CardContent className="p-3">
                 <p className="text-xs font-medium line-clamp-2 leading-snug mb-2">{video.title}</p>
@@ -139,9 +169,4 @@ function VideosView({ initialData }: { initialData: YouTubeApiResponse }) {
       <VideoDetailSheet video={selected} open={!!selected} onOpenChange={(o) => !o && setSelected(null)} />
     </AppShell>
   );
-}
-
-export default function VideosViewWithAuth({ initialData }: { initialData: YouTubeApiResponse }) {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <VideosView initialData={initialData} /> : <LoginPage />;
 }

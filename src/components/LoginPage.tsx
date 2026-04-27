@@ -21,14 +21,15 @@ export function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
-    setTimeout(() => {
-      if (!login(username, password)) setError("Invalid username or password");
+    const success = await login(username, password);
+    if (!success) {
+      setError("Invalid username or password");
       setLoading(false);
-    }, 400);
+    }
   }
 
   return (

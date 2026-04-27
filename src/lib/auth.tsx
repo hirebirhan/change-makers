@@ -1,37 +1,45 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useRouter } from "next/navigation";
 
 const CREDENTIALS = { username: "admin", password: "changem@kers2025" };
-const STORAGE_KEY = "yt_auth";
 
 interface AuthCtx {
   isAuthenticated: boolean;
-  login: (username: string, password: string) => boolean;
-  logout: () => void;
+  login: (username: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthCtx | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    setIsAuthenticated(sessionStorage.getItem(STORAGE_KEY) === "true");
+    fetch("/api/auth/check")
+      .then(res => res.json())
+      .then(data => setIsAuthenticated(data.authenticated))
+      .catch(() => setIsAuthenticated(false));
   }, []);
 
-  function login(username: string, password: string) {
+  async function login(username: string, password: string) {
     if (username === CREDENTIALS.username && password === CREDENTIALS.password) {
-      sessionStorage.setItem(STORAGE_KEY, "true");
-      setIsAuthenticated(true);
-      return true;
+      const res = await fetch("/api/auth/login", { method: "POST" });
+      if (res.ok) {
+        setIsAuthenticated(true);
+        router.push("/");
+        return true;
+      }
     }
     return false;
   }
 
-  function logout() {
-    sessionStorage.removeItem(STORAGE_KEY);
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
     setIsAuthenticated(false);
+    router.push("/login");
   }
 
   return <AuthContext.Provider value={{ isAuthenticated, login, logout }}>{children}</AuthContext.Provider>;

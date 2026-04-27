@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useAuth } from "@/lib/auth";
-import { LoginPage } from "@/components/LoginPage";
 import { AppShell } from "@/components/AppShell";
 import ChannelOverview from "@/components/ChannelOverview";
 import AnalyticsChart from "@/components/AnalyticsChart";
@@ -28,6 +26,9 @@ export function DashboardView({ initialData }: { initialData: YouTubeApiResponse
     }
   }, []);
 
+  const shorts = data.videos.filter(v => v.isShort);
+  const regularVideos = data.videos.filter(v => !v.isShort);
+
   return (
     <AppShell channel={data.channel} onRefresh={refresh} refreshing={refreshing} lastUpdated={lastUpdated}>
       <main className="flex-1 w-full px-6 py-8 space-y-6">
@@ -44,7 +45,7 @@ export function DashboardView({ initialData }: { initialData: YouTubeApiResponse
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto max-h-[340px]">
               <div className="space-y-1">
-                {data.videos
+                {regularVideos
                   .sort((a, b) => b.viewCount - a.viewCount)
                   .map((video, index) => (
                     <VideoCard key={video.id} video={video} rank={index + 1} />
@@ -53,6 +54,24 @@ export function DashboardView({ initialData }: { initialData: YouTubeApiResponse
             </CardContent>
           </Card>
         </div>
+
+        {shorts.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Shorts</CardTitle>
+              <CardDescription>Videos under 60 seconds</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {shorts
+                  .sort((a, b) => b.viewCount - a.viewCount)
+                  .map((video) => (
+                    <VideoCard key={video.id} video={video} />
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <ReportsSection reports={data.reports} />
       </main>
@@ -65,9 +84,4 @@ export function DashboardView({ initialData }: { initialData: YouTubeApiResponse
       </footer>
     </AppShell>
   );
-}
-
-export default function DashboardViewWithAuth({ initialData }: { initialData: YouTubeApiResponse }) {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <DashboardView initialData={initialData} /> : <LoginPage />;
 }

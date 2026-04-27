@@ -46,37 +46,53 @@ async function fetchVideos(): Promise<Video[]> {
   if (!videoIds.length) return [];
 
   const vRes = await fetch(
-    `${BASE}/videos?part=snippet,statistics,contentDetails&id=${videoIds.join(",")}&key=${API_KEY}`,
+    `${BASE}/videos?part=snippet,statistics,contentDetails,status&id=${videoIds.join(",")}&key=${API_KEY}`,
     { next: { revalidate: 300 } }
   );
   const vData = await vRes.json();
 
-  return (vData.items ?? []).map((v: {
-    id: string;
-    snippet: {
-      title: string;
-      description: string;
-      thumbnails: { maxres?: { url: string }; high?: { url: string }; default?: { url: string } };
-      publishedAt: string;
-      tags?: string[];
-    };
-    statistics: { viewCount?: string; likeCount?: string; commentCount?: string };
-    contentDetails: { duration: string };
-  }) => ({
-    id: v.id,
-    title: v.snippet.title,
-    description: v.snippet.description,
-    thumbnailUrl:
-      v.snippet.thumbnails?.maxres?.url ??
-      v.snippet.thumbnails?.high?.url ??
-      v.snippet.thumbnails?.default?.url ?? "",
-    publishedAt: v.snippet.publishedAt,
-    viewCount: parseInt(v.statistics.viewCount ?? "0"),
-    likeCount: parseInt(v.statistics.likeCount ?? "0"),
-    commentCount: parseInt(v.statistics.commentCount ?? "0"),
-    duration: formatDuration(v.contentDetails.duration),
-    tags: v.snippet.tags ?? [],
-  }));
+  return (vData.items ?? [])
+    .filter((v: { status: { privacyStatus: string } }) => v.status.privacyStatus === "public")
+    .map((v: {
+      id: string;
+      snippet: {
+        title: string;
+        description: string;
+        thumbnails: { maxres?: { url: string }; high?: { url: string }; default?: { url: string } };
+        publishedAt: string;
+        tags?: string[];
+      };
+      statistics: { viewCount?: string; likeCount?: string; commentCount?: string };
+      contentDetails: { duration: string };
+    }) => {
+      const durationSeconds = parseDurationToSeconds(v.contentDetails.duration);
+      return {
+        id: v.id,
+        title: v.snippet.title,
+        description: v.snippet.description,
+        thumbnailUrl:
+          v.snippet.thumbnails?.maxres?.url ??
+          v.snippet.thumbnails?.high?.url ??
+          v.snippet.thumbnails?.default?.url ?? "",
+        publishedAt: v.snippet.publishedAt,
+        viewCount: parseInt(v.statistics.viewCount ?? "0"),
+        likeCount: parseInt(v.statistics.likeCount ?? "0"),
+        commentCount: parseInt(v.statistics.commentCount ?? "0"),
+        duration: formatDuration(v.contentDetails.duration),
+        durationSeconds,
+        isShort: durationSeconds <= 60,
+        tags: v.snippet.tags ?? [],
+      };
+    });
+}
+
+function parseDurationToSeconds(iso: string): number {
+  const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!match) return 0;
+  const h = parseInt(match[1] ?? "0");
+  const m = parseInt(match[2] ?? "0");
+  const s = parseInt(match[3] ?? "0");
+  return h * 3600 + m * 60 + s;
 }
 
 function formatDuration(iso: string): string {
