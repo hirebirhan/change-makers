@@ -101,7 +101,7 @@ function generateKeywordBasedIdeas(commentTexts: string[]): string[] {
 
   for (const comment of commentTexts) {
     for (const pattern of questionPatterns) {
-      const matches = [...comment.matchAll(pattern)];
+      const matches = [...comment.matchAll(pattern.regex)]; // ✅ Correct
       for (const match of matches) {
         const topic = match[match.length - 1]
           .trim()
