@@ -132,8 +132,8 @@ export function AIView({ initialData }: { initialData: YouTubeApiResponse }) {
             <Sparkles className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-xl font-bold">AI Studio</h1>
-            <p className="text-sm text-muted-foreground">Powered by Google Gemini — channel analysis, topic ideas, and content writing</p>
+            <h1 className="text-xl font-semibold tracking-tight">AI Studio</h1>
+            <p className="text-sm text-muted-foreground leading-tight">Powered by Google Gemini — channel analysis, topic ideas, and content writing</p>
           </div>
           <Badge variant="secondary" className="ml-auto shrink-0">gemini-1.5-flash</Badge>
         </div>

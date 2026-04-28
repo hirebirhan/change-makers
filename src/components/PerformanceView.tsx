@@ -40,8 +40,8 @@ export function PerformanceView({ initialData, performance }: PerformanceViewPro
     <AppShell channel={data.channel} onRefresh={refresh} refreshing={refreshing} lastUpdated={lastUpdated}>
       <main className="flex-1 w-full px-6 py-8 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">Video Performance</h1>
-          <p className="text-sm text-muted-foreground">Track your best and worst performing content</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Video Performance</h1>
+          <p className="text-sm text-muted-foreground leading-tight">Track your best and worst performing content</p>
         </div>
 
         <Tabs defaultValue="best">

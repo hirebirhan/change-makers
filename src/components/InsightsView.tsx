@@ -25,16 +25,16 @@ interface InsightsViewProps {
 }
 
 const tagChartConfig = {
-  count: { label: "Videos", color: "hsl(var(--chart-1))" },
+  count: { label: "Videos", color: "var(--chart-1)" },
 } satisfies ChartConfig;
 
 const uploadChartConfig = {
-  count: { label: "Uploads", color: "hsl(var(--chart-2))" },
+  count: { label: "Uploads", color: "var(--chart-2)" },
 } satisfies ChartConfig;
 
 const lengthChartConfig = {
-  count: { label: "Videos", color: "hsl(var(--chart-1))" },
-  avgViews: { label: "Avg Views", color: "hsl(var(--chart-3))" },
+  count: { label: "Videos", color: "var(--chart-1)" },
+  avgViews: { label: "Avg Views", color: "var(--chart-3)" },
 } satisfies ChartConfig;
 
 export function InsightsView({
@@ -62,8 +62,8 @@ export function InsightsView({
     <AppShell channel={data.channel} onRefresh={refresh} refreshing={refreshing} lastUpdated={lastUpdated}>
       <main className="flex-1 w-full px-6 py-8 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">Content Insights</h1>
-          <p className="text-sm text-muted-foreground">Analyze your content strategy and patterns</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Content Insights</h1>
+          <p className="text-sm text-muted-foreground leading-tight">Analyze your content strategy and patterns</p>
         </div>
 
         <Tabs defaultValue="tags">

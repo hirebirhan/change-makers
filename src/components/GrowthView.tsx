@@ -42,8 +42,8 @@ export function GrowthView({ initialData, milestones, streak }: GrowthViewProps)
     <AppShell channel={data.channel} onRefresh={refresh} refreshing={refreshing} lastUpdated={lastUpdated}>
       <main className="flex-1 w-full px-4 py-4 space-y-4">
         <div>
-          <h1 className="text-xl font-bold">Growth Tracking</h1>
-          <p className="text-xs text-muted-foreground">Track your milestones and upload consistency</p>
+          <h1 className="text-xl font-semibold tracking-tight">Growth Tracking</h1>
+          <p className="text-xs text-muted-foreground leading-none">Track your milestones and upload consistency</p>
         </div>
 
         {/* Upload Streak */}

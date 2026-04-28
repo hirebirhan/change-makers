@@ -16,16 +16,33 @@
 - Text spacing: Use `leading-none` or `leading-tight` for compact layouts
 
 ### Typography
-- Page titles: `text-xl font-bold`
-- Page descriptions: `text-xs text-muted-foreground`
-- Card titles: `text-xl tabular-nums` for numbers
+- Page titles: `text-xl font-semibold tracking-tight` or `text-2xl font-semibold tracking-tight`
+- Page descriptions: `text-xs text-muted-foreground leading-none` or `text-sm text-muted-foreground leading-tight`
+- Card titles: `text-xl tabular-nums` for numbers, `text-base font-semibold` for text
 - Card labels: `text-xs` in CardDescription
 - Inline units: `text-xs font-normal text-muted-foreground`
+- Body text: Use `leading-tight` or `leading-none` for compact layouts
+- Headings: Always use `font-semibold` with `tracking-tight` for polished look
+- NEVER use `font-bold` - always use `font-semibold` for consistency with sidebar
 
 ### Color Patterns
 - Primary stats: `bg-primary/10` with `text-primary`
 - Secondary stats: `bg-muted` with `text-muted-foreground`
 - Special indicators: `bg-orange-500/10` with `text-orange-500`, `bg-rose-500/10` with `text-rose-500`
+
+### Chart Colors
+- **CRITICAL**: Always use raw CSS variables for chart colors: `var(--chart-1)`, `var(--chart-2)`, etc.
+- **NEVER** wrap chart variables in color functions like `hsl()`, `oklch()`, or `rgb()`
+- Chart variables in globals.css already contain the complete color function
+- ❌ WRONG: `color: "hsl(var(--chart-1))"` or `color: "oklch(var(--chart-1))"`
+- ✅ CORRECT: `color: "var(--chart-1)"`
+- For Tailwind classes, use: `bg-chart-1`, `text-chart-1`, `border-chart-1`, etc.
+- Chart color mapping:
+  - `--chart-1`: Green (primary, positive metrics)
+  - `--chart-2`: Blue (secondary metrics)
+  - `--chart-3`: Purple (tertiary metrics)
+  - `--chart-4`: Pink (quaternary metrics)
+  - `--chart-5`: Red/Orange (negative metrics, warnings)
 
 ## Component Patterns
 
@@ -95,6 +112,15 @@ export function FeatureView({ initialData }: Props) {
 5. **Don't add unnecessary line height**
    - ❌ Default line height for compact layouts
    - ✅ `leading-none` or `leading-tight`
+
+6. **Don't use font-bold for headings**
+   - ❌ `text-xl font-bold`
+   - ✅ `text-xl font-semibold tracking-tight`
+
+7. **Don't wrap chart color variables in color functions**
+   - ❌ `color: "hsl(var(--chart-1))"` or `color: "oklch(var(--chart-1))"`
+   - ✅ `color: "var(--chart-1)"`
+   - Reason: CSS variables already contain complete color functions like `oklch(0.65 0.25 142)`
 
 ## TypeScript Rules
 

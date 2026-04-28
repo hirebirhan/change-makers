@@ -69,10 +69,10 @@ export function VideosView({ initialData }: { initialData: YouTubeApiResponse })
     <AppShell channel={data.channel} onRefresh={refresh} refreshing={refreshing} lastUpdated={lastUpdated}>
       <main className="flex-1 w-full px-4 py-4 space-y-4">
         <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h1 className="text-xl font-bold">Video Library</h1>
-              <p className="text-xs text-muted-foreground">{filtered.length} of {data.videos.length} videos</p>
+              <h1 className="text-xl font-semibold tracking-tight">Video Library</h1>
+              <p className="text-xs text-muted-foreground leading-none">{filtered.length} of {data.videos.length} videos</p>
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <div className="relative flex-1 sm:flex-initial">
@@ -84,22 +84,22 @@ export function VideosView({ initialData }: { initialData: YouTubeApiResponse })
                   className="pl-8 h-8 w-full sm:w-56 text-sm"
                 />
               </div>
-              <Tabs value={sort} onValueChange={(v) => setSort(v as SortKey)} className="w-full sm:w-auto">
-                <TabsList className="w-full sm:w-auto grid grid-cols-4">
-                  <TabsTrigger value="views" className="text-xs">Views</TabsTrigger>
-                  <TabsTrigger value="likes" className="text-xs">Likes</TabsTrigger>
-                  <TabsTrigger value="comments" className="text-xs">Comments</TabsTrigger>
-                  <TabsTrigger value="date" className="text-xs">Date</TabsTrigger>
+              <Tabs value={sort} onValueChange={(v) => setSort(v as SortKey)} >
+                <TabsList className="h-8 w-full sm:w-auto grid grid-cols-4 sm:grid-cols-4">
+                  <TabsTrigger value="views" className="h-7 text-xs px-2">Views</TabsTrigger>
+                  <TabsTrigger value="likes" className="h-7 text-xs px-2">Likes</TabsTrigger>
+                  <TabsTrigger value="comments" className="h-7 text-xs px-2">Comments</TabsTrigger>
+                  <TabsTrigger value="date" className="h-7 text-xs px-2">Date</TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
           </div>
           
           <Tabs value={filter} onValueChange={(v) => setFilter(v as FilterType)}>
-            <TabsList className="w-full sm:w-auto grid grid-cols-3">
-              <TabsTrigger value="all" className="text-xs">All ({counts.all})</TabsTrigger>
-              <TabsTrigger value="videos" className="text-xs">Videos ({counts.videos})</TabsTrigger>
-              <TabsTrigger value="shorts" className="text-xs">Shorts ({counts.shorts})</TabsTrigger>
+            <TabsList>
+              <TabsTrigger value="all" className="h-7 text-xs px-2">All ({counts.all})</TabsTrigger>
+              <TabsTrigger value="videos" className="h-7 text-xs px-2">Videos ({counts.videos})</TabsTrigger>
+              <TabsTrigger value="shorts" className="h-7 text-xs px-2">Shorts ({counts.shorts})</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -139,7 +139,7 @@ export function VideosView({ initialData }: { initialData: YouTubeApiResponse })
                 </div>
               </div>
               <CardContent className="p-3">
-                <p className="text-xs font-medium line-clamp-2 leading-snug mb-2">{video.title}</p>
+                <p className="text-xs font-semibold line-clamp-2 leading-tight mb-2">{video.title}</p>
                 <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                   <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{formatNumber(video.viewCount)}</span>
                   <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" />{formatNumber(video.likeCount)}</span>

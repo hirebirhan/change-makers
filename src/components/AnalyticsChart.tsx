@@ -35,29 +35,29 @@ function fmtDate(value: string, range: Range) {
 const viewsConfig = {
   views: {
     label: "Views",
-    color: "hsl(var(--chart-1))",
+    color: "var(--chart-1)",
   },
 } satisfies ChartConfig;
 
 const subscribersConfig = {
   subscribersGained: {
     label: "Gained",
-    color: "hsl(var(--chart-1))",
+    color: "var(--chart-1)",
   },
   subscribersLost: {
     label: "Lost",
-    color: "hsl(var(--chart-5))",
+    color: "var(--chart-5)",
   },
 } satisfies ChartConfig;
 
 const audienceConfig = {
   subscribed: {
     label: "Subscribed",
-    color: "hsl(var(--chart-1))",
+    color: "var(--chart-1)",
   },
   notSubscribed: {
     label: "Not subscribed",
-    color: "hsl(var(--chart-3))",
+    color: "var(--chart-3)",
   },
 } satisfies ChartConfig;
 

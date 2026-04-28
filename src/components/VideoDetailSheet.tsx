@@ -53,12 +53,12 @@ export function VideoDetailSheet({ video, open, onOpenChange }: VideoDetailSheet
         )}
 
         {/* Watch button */}
-        <Button variant="destructive" size="sm" className="w-full mb-4" render={
-          <a href={`https://www.youtube.com/watch?v=${video.id}`} target="_blank" rel="noopener noreferrer" />
-        }>
-          <ExternalLink className="w-3.5 h-3.5" />
-          Watch on YouTube
-        </Button>
+        <a href={`https://www.youtube.com/watch?v=${video.id}`} target="_blank" rel="noopener noreferrer" className="block mb-4">
+          <Button variant="destructive" size="sm" className="w-full">
+            <ExternalLink className="w-3.5 h-3.5" />
+            Watch on YouTube
+          </Button>
+        </a>
 
         {/* Stats grid */}
         <div className="grid grid-cols-2 gap-2 mb-4">
