@@ -67,44 +67,44 @@ export function VideosView({ initialData }: { initialData: YouTubeApiResponse })
 
   return (
     <AppShell channel={data.channel} onRefresh={refresh} refreshing={refreshing} lastUpdated={lastUpdated}>
-      <main className="flex-1 w-full px-6 py-8 space-y-6">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+      <main className="flex-1 w-full px-4 py-4 space-y-4">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3">
             <div>
               <h1 className="text-xl font-bold">Video Library</h1>
-              <p className="text-sm text-muted-foreground">{filtered.length} of {data.videos.length} videos</p>
+              <p className="text-xs text-muted-foreground">{filtered.length} of {data.videos.length} videos</p>
             </div>
-            <div className="flex items-center gap-3 sm:ml-auto">
-              <div className="relative">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="relative flex-1 sm:flex-initial">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                 <Input
                   placeholder="Search videos…"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  className="pl-8 h-8 w-56 text-sm"
+                  className="pl-8 h-8 w-full sm:w-56 text-sm"
                 />
               </div>
-              <Tabs value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-                <TabsList>
-                  <TabsTrigger value="views">Views</TabsTrigger>
-                  <TabsTrigger value="likes">Likes</TabsTrigger>
-                  <TabsTrigger value="comments">Comments</TabsTrigger>
-                  <TabsTrigger value="date">Date</TabsTrigger>
+              <Tabs value={sort} onValueChange={(v) => setSort(v as SortKey)} className="w-full sm:w-auto">
+                <TabsList className="w-full sm:w-auto grid grid-cols-4">
+                  <TabsTrigger value="views" className="text-xs">Views</TabsTrigger>
+                  <TabsTrigger value="likes" className="text-xs">Likes</TabsTrigger>
+                  <TabsTrigger value="comments" className="text-xs">Comments</TabsTrigger>
+                  <TabsTrigger value="date" className="text-xs">Date</TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
           </div>
           
           <Tabs value={filter} onValueChange={(v) => setFilter(v as FilterType)}>
-            <TabsList>
-              <TabsTrigger value="all">All ({counts.all})</TabsTrigger>
-              <TabsTrigger value="videos">Videos ({counts.videos})</TabsTrigger>
-              <TabsTrigger value="shorts">Shorts ({counts.shorts})</TabsTrigger>
+            <TabsList className="w-full sm:w-auto grid grid-cols-3">
+              <TabsTrigger value="all" className="text-xs">All ({counts.all})</TabsTrigger>
+              <TabsTrigger value="videos" className="text-xs">Videos ({counts.videos})</TabsTrigger>
+              <TabsTrigger value="shorts" className="text-xs">Shorts ({counts.shorts})</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {filtered.map((video) => (
             <Card
               key={video.id}

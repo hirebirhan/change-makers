@@ -16,8 +16,8 @@ const YT_LOGO = (
 
 export function LoginPage() {
   const { login } = useAuth();
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("changem@kers2025");
+  const [username, setUsername] = useState(process.env.NODE_ENV === "development" ? "admin" : "");
+  const [password, setPassword] = useState(process.env.NODE_ENV === "development" ? "changem@kers2025" : "");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -33,7 +33,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Brand panel — gold background */}
       <div className="hidden lg:flex lg:w-1/2 bg-primary flex-col justify-between p-10">
         <div className="flex items-center gap-2.5">
@@ -55,11 +55,11 @@ export function LoginPage() {
       </div>
 
       {/* Form panel */}
-      <div className="flex-1 flex flex-col bg-background">
+      <div className="flex-1 flex flex-col bg-background min-h-screen lg:min-h-0">
         <div className="flex justify-end p-4">
           <ThemeToggle />
         </div>
-        <div className="flex-1 flex items-center justify-center px-6">
+        <div className="flex-1 flex items-center justify-center px-6 py-8">
           <Card className="w-full max-w-sm">
             <CardHeader>
               <div className="flex items-center gap-2 mb-1 lg:hidden">
