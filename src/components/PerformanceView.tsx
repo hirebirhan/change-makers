@@ -2,14 +2,13 @@
 
 import { useState, useCallback } from "react";
 import { AppShell } from "@/components/AppShell";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import VideoCard from "@/components/VideoCard";
 import { YouTubeApiResponse } from "@/types/youtube";
 import { VideoPerformance } from "@/lib/analytics-utils";
 import { fetchYouTubeAnalytics } from "@/lib/youtube-api";
-import { TrendingUp, TrendingDown, Clock, Zap } from "lucide-react";
+import { TrendingUp, TrendingDown, Clock, Eye, Heart, MessageCircle, Zap } from "lucide-react";
 
 interface PerformanceViewProps {
   initialData: YouTubeApiResponse;
@@ -18,6 +17,12 @@ interface PerformanceViewProps {
     worst: VideoPerformance[];
     recent: VideoPerformance[];
   };
+}
+
+function formatNumber(n: number) {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + "K";
+  return n.toLocaleString();
 }
 
 export function PerformanceView({ initialData, performance }: PerformanceViewProps) {
@@ -38,126 +43,133 @@ export function PerformanceView({ initialData, performance }: PerformanceViewPro
 
   return (
     <AppShell channel={data.channel} onRefresh={refresh} refreshing={refreshing} lastUpdated={lastUpdated}>
-      <main className="flex-1 w-full px-6 py-8 space-y-6">
+      <main className="flex-1 w-full px-4 py-4 space-y-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Video Performance</h1>
-          <p className="text-sm text-muted-foreground leading-tight">Track your best and worst performing content</p>
+          <h1 className="text-xl font-semibold tracking-tight">Performance</h1>
+          <p className="text-xs text-muted-foreground leading-none">Video performance analysis</p>
         </div>
 
         <Tabs defaultValue="best">
           <TabsList>
-            <TabsTrigger value="best">
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Best Performers
+            <TabsTrigger value="best" className="flex items-center gap-1.5">
+              <TrendingUp className="w-3.5 h-3.5" />
+              Best
             </TabsTrigger>
-            <TabsTrigger value="recent">
-              <Clock className="w-4 h-4 mr-2" />
-              Recent (30d)
+            <TabsTrigger value="recent" className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5" />
+              Recent
             </TabsTrigger>
-            <TabsTrigger value="worst">
-              <TrendingDown className="w-4 h-4 mr-2" />
-              Needs Improvement
+            <TabsTrigger value="worst" className="flex items-center gap-1.5">
+              <TrendingDown className="w-3.5 h-3.5" />
+              Improve
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="best" className="space-y-6 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Top 10 Best Performing Videos</CardTitle>
-                <CardDescription>Ranked by engagement score (views per day × engagement rate)</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {performance.best.map((perf, index) => (
-                    <div key={perf.video.id} className="flex items-start gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-chart-1 text-white font-bold text-sm shrink-0">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-sm mb-2 line-clamp-2">{perf.video.title}</h3>
-                        <div className="flex flex-wrap gap-2 text-xs">
-                          <Badge variant="secondary">
-                            <Zap className="w-3 h-3 mr-1" />
-                            {Math.round(perf.viewsPerDay).toLocaleString()} views/day
-                          </Badge>
-                          <Badge variant="outline">{perf.likeRatio.toFixed(2)}% like rate</Badge>
-                          <Badge variant="outline">{perf.commentRatio.toFixed(2)}% comment rate</Badge>
-                          <Badge variant="outline">{perf.video.viewCount.toLocaleString()} total views</Badge>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+          <TabsContent value="best" className="space-y-1 mt-4">
+            {performance.best.map((perf, index) => (
+              <div key={perf.video.id} className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-center w-4 h-4 rounded-full bg-chart-1 text-white font-semibold text-xs shrink-0">
+                  {index + 1}
                 </div>
-              </CardContent>
-            </Card>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-sm leading-tight truncate">{perf.video.title}</h3>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
+                  <span className="flex items-center gap-1">
+                    <Zap className="w-3 h-3 text-chart-1" />
+                    {formatNumber(Math.round(perf.viewsPerDay))}/day
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Eye className="w-3 h-3" />
+                    {formatNumber(perf.video.viewCount)}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Heart className="w-3 h-3" />
+                    {perf.likeRatio.toFixed(1)}%
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <MessageCircle className="w-3 h-3" />
+                    {perf.commentRatio.toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+            ))}
           </TabsContent>
 
-          <TabsContent value="recent" className="space-y-6 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Uploads Performance</CardTitle>
-                <CardDescription>Videos published in the last 30 days, ranked by views per day</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {performance.recent.length > 0 ? (
-                  <div className="space-y-4">
-                    {performance.recent.map((perf, index) => (
-                      <div key={perf.video.id} className="flex items-start gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-chart-2 text-white font-bold text-sm shrink-0">
-                          {index + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-sm mb-2 line-clamp-2">{perf.video.title}</h3>
-                          <div className="flex flex-wrap gap-2 text-xs">
-                            <Badge variant="secondary">
-                              <Zap className="w-3 h-3 mr-1" />
-                              {Math.round(perf.viewsPerDay).toLocaleString()} views/day
-                            </Badge>
-                            <Badge variant="outline">
-                              {new Date(perf.video.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                            </Badge>
-                            <Badge variant="outline">{perf.video.viewCount.toLocaleString()} views</Badge>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+          <TabsContent value="recent" className="space-y-1 mt-4">
+            {performance.recent.length > 0 ? (
+              performance.recent.map((perf, index) => {
+                const daysOld = Math.floor((Date.now() - new Date(perf.video.publishedAt).getTime()) / (1000 * 60 * 60 * 24));
+                return (
+                  <div key={perf.video.id} className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center justify-center w-4 h-4 rounded-full bg-chart-2 text-white font-semibold text-xs shrink-0">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-sm leading-tight truncate">{perf.video.title}</h3>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
+                      <Badge variant="outline" className="text-xs">{daysOld}d ago</Badge>
+                      <span className="flex items-center gap-1">
+                        <Zap className="w-3 h-3 text-chart-2" />
+                        {formatNumber(Math.round(perf.viewsPerDay))}/day
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Eye className="w-3 h-3" />
+                        {formatNumber(perf.video.viewCount)}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Heart className="w-3 h-3" />
+                        {perf.likeRatio.toFixed(1)}%
+                      </span>
+                    </div>
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-8">No videos published in the last 30 days</p>
-                )}
-              </CardContent>
-            </Card>
+                );
+              })
+            ) : (
+              <div className="text-center py-6 text-sm text-muted-foreground">
+                No videos published in the last 30 days
+              </div>
+            )}
           </TabsContent>
 
-          <TabsContent value="worst" className="space-y-6 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Videos Needing Improvement</CardTitle>
-                <CardDescription>Lowest performing videos - opportunities for optimization</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {performance.worst.map((perf, index) => (
-                    <div key={perf.video.id} className="flex items-start gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted text-muted-foreground font-bold text-sm shrink-0">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-sm mb-2 line-clamp-2">{perf.video.title}</h3>
-                        <div className="flex flex-wrap gap-2 text-xs">
-                          <Badge variant="secondary">
-                            {Math.round(perf.viewsPerDay).toLocaleString()} views/day
-                          </Badge>
-                          <Badge variant="outline">{perf.likeRatio.toFixed(2)}% like rate</Badge>
-                          <Badge variant="outline">{perf.commentRatio.toFixed(2)}% comment rate</Badge>
-                          <Badge variant="outline">{perf.video.viewCount.toLocaleString()} total views</Badge>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+          <TabsContent value="worst" className="space-y-1 mt-4">
+            {performance.worst.map((perf, index) => {
+              const suggestions = [];
+              if (perf.likeRatio < 1) suggestions.push('Low likes');
+              if (perf.commentRatio < 0.5) suggestions.push('Low engagement');
+              if (perf.viewsPerDay < 10) suggestions.push('Low visibility');
+              
+              return (
+                <div key={perf.video.id} className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-center w-4 h-4 rounded-full bg-orange-500/10 text-orange-600 font-semibold text-xs shrink-0">
+                    {index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-sm leading-tight truncate">{perf.video.title}</h3>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
+                    {suggestions.length > 0 && (
+                      <Badge variant="outline" className="text-xs bg-orange-50 text-orange-600 border-orange-200">
+                        {suggestions[0]}
+                      </Badge>
+                    )}
+                    <span className="flex items-center gap-1">
+                      <Zap className="w-3 h-3" />
+                      {formatNumber(Math.round(perf.viewsPerDay))}/day
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Eye className="w-3 h-3" />
+                      {formatNumber(perf.video.viewCount)}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Heart className="w-3 h-3" />
+                      {perf.likeRatio.toFixed(1)}%
+                    </span>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+              );
+            })}
           </TabsContent>
         </Tabs>
       </main>
