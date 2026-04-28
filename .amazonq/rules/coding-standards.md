@@ -25,10 +25,50 @@
 - Headings: Always use `font-semibold` with `tracking-tight` for polished look
 - NEVER use `font-bold` - always use `font-semibold` for consistency with sidebar
 
-### Color Patterns
-- Primary stats: `bg-primary/10` with `text-primary`
-- Secondary stats: `bg-muted` with `text-muted-foreground`
-- Special indicators: `bg-orange-500/10` with `text-orange-500`, `bg-rose-500/10` with `text-rose-500`
+### Color System - CRITICAL RULES
+
+**NEVER use hardcoded Tailwind color classes like:**
+- ❌ `text-green-600`, `text-red-500`, `text-orange-400`, `text-yellow-500`
+- ❌ `bg-green-500/10`, `bg-red-500/10`, `bg-orange-500/10`
+- ❌ `border-green-200`, `border-red-300`
+
+**ALWAYS use semantic colors from globals.css:**
+
+#### Primary Semantic Colors
+- `text-primary` / `bg-primary` - Main brand color, primary actions
+- `text-secondary` / `bg-secondary` - Secondary elements
+- `text-muted` / `bg-muted` - Subtle backgrounds
+- `text-muted-foreground` - Secondary text
+- `text-destructive` / `bg-destructive` - Errors, dangerous actions, negative states
+- `text-accent` / `bg-accent` - Highlights, special emphasis
+
+#### Chart Colors (for data visualization)
+- `text-chart-1` / `bg-chart-1` - Success, positive metrics, good states (replaces green)
+- `text-chart-2` / `bg-chart-2` - Gold accent, special highlights
+- `text-chart-3` / `bg-chart-3` - Supporting data
+- `text-chart-4` / `bg-chart-4` - Complementary data
+- `text-chart-5` / `bg-chart-5` - Warnings, medium priority (replaces orange)
+
+#### Usage Examples
+```tsx
+// ❌ WRONG
+<Badge className="text-green-600 bg-green-500/10">Success</Badge>
+<div className="text-orange-500">Warning</div>
+<span className="text-red-600">Error</span>
+
+// ✅ CORRECT
+<Badge className="text-chart-1 bg-chart-1/10">Success</Badge>
+<div className="text-chart-5">Warning</div>
+<span className="text-destructive">Error</span>
+```
+
+#### Color Mapping Guide
+- Green → `chart-1` (success, positive, good)
+- Orange/Yellow → `chart-5` (warning, medium, caution)
+- Red → `destructive` (error, danger, negative)
+- Blue → `primary` or `chart-2`
+- Purple → `chart-4`
+- Gray → `muted` or `muted-foreground`
 
 ### Chart Colors
 - **CRITICAL**: Always use raw CSS variables for chart colors: `var(--chart-1)`, `var(--chart-2)`, etc.
@@ -38,11 +78,11 @@
 - ✅ CORRECT: `color: "var(--chart-1)"`
 - For Tailwind classes, use: `bg-chart-1`, `text-chart-1`, `border-chart-1`, etc.
 - Chart color mapping:
-  - `--chart-1`: Green (primary, positive metrics)
-  - `--chart-2`: Blue (secondary metrics)
-  - `--chart-3`: Purple (tertiary metrics)
-  - `--chart-4`: Pink (quaternary metrics)
-  - `--chart-5`: Red/Orange (negative metrics, warnings)
+  - `--chart-1`: Blue-Gray (success, positive metrics)
+  - `--chart-2`: Gold (accent, special highlights)
+  - `--chart-3`: Supporting tone
+  - `--chart-4`: Purple (complementary)
+  - `--chart-5`: Orange (warnings, medium priority)
 
 ## Component Patterns
 
@@ -122,6 +162,83 @@ export function FeatureView({ initialData }: Props) {
    - ✅ `color: "var(--chart-1)"`
    - Reason: CSS variables already contain complete color functions like `oklch(0.65 0.25 142)`
 
+8. **Don't use hardcoded Tailwind colors**
+   - ❌ `text-green-600`, `bg-red-500/10`, `text-orange-400`
+   - ✅ `text-chart-1`, `bg-destructive/10`, `text-chart-5`
+
+9. **Don't put logic inside JSX**
+   - ❌ `{[...].map(...)}`  with array defined inline
+   - ✅ Extract arrays and complex logic to component body or separate functions
+
+10. **Don't import unused components**
+   - ❌ Importing components/icons that aren't used
+   - ✅ Only import what you actually use
+
+## Code Organization Rules
+
+### Pages Must Be Server Components
+- **CRITICAL**: All page components in `src/app/[feature]/page.tsx` MUST be server components
+- Server components should fetch data directly using server-side utilities
+- Never use `"use client"` in page files
+- Never use React hooks (useState, useEffect, etc.) in pages
+- Pass fetched data to client view components as props
+
+### Pattern:
+```tsx
+// ✅ CORRECT: src/app/feature/page.tsx (Server Component)
+import { getYouTubeData } from "@/lib/youtube-server";
+import { FeatureView } from "@/components/FeatureView";
+
+export default async function FeaturePage() {
+  const data = await getYouTubeData();
+  return <FeatureView initialData={data} />;
+}
+
+// ✅ CORRECT: src/components/FeatureView.tsx (Client Component)
+"use client";
+import { useState } from "react";
+
+export function FeatureView({ initialData }) {
+  const [data, setData] = useState(initialData);
+  // Client-side logic here
+}
+```
+
+### No Logic Inside JSX
+- Extract all arrays, objects, and complex computations outside JSX
+- Define data structures in component body before return statement
+- Use helper functions for conditional logic
+
+```tsx
+// ❌ WRONG
+return (
+  <div>
+    {[
+      { label: "Item 1", value: 10 },
+      { label: "Item 2", value: 20 },
+    ].map(item => <div key={item.label}>{item.value}</div>)}
+  </div>
+);
+
+// ✅ CORRECT
+const items = [
+  { label: "Item 1", value: 10 },
+  { label: "Item 2", value: 20 },
+];
+
+return (
+  <div>
+    {items.map(item => <div key={item.label}>{item.value}</div>)}
+  </div>
+);
+```
+
+### No Unused Imports
+- Remove all unused component imports
+- Remove all unused icon imports
+- Remove all unused utility imports
+- Use IDE features or linters to detect unused imports
+
 ## TypeScript Rules
 
 - Always define interfaces for component props
@@ -141,8 +258,8 @@ export function FeatureView({ initialData }: Props) {
 
 ## File Organization
 
-- Page components: `src/app/[feature]/page.tsx`
-- View components: `src/components/[Feature]View.tsx`
+- Page components: `src/app/[feature]/page.tsx` (server components)
+- View components: `src/components/[Feature]View.tsx` (client components)
 - UI components: `src/components/ui/[component].tsx`
 - Utilities: `src/lib/[utility].ts`
 - Types: `src/types/[type].ts`

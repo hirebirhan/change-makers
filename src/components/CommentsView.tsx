@@ -46,7 +46,7 @@ function CommentAvatar({ src, alt, size = 32 }: { src: string; alt: string; size
 }
 
 function sentimentBadge(s: Comment["sentiment"]) {
-  if (s === "positive") return <Badge variant="secondary" className="text-green-600 dark:text-green-400 bg-green-500/10 border-green-500/20 text-xs h-5 px-2"><SmilePlus className="w-3 h-3 mr-1" />Positive</Badge>;
+  if (s === "positive") return <Badge variant="secondary" className="text-chart-1 bg-chart-1/10 border-chart-1/20 text-xs h-5 px-2"><SmilePlus className="w-3 h-3 mr-1" />Positive</Badge>;
   if (s === "negative") return <Badge variant="destructive" className="text-xs h-5 px-2"><Frown className="w-3 h-3 mr-1" />Negative</Badge>;
   return <Badge variant="outline" className="text-xs h-5 px-2"><Meh className="w-3 h-3 mr-1" />Neutral</Badge>;
 }
@@ -123,9 +123,9 @@ export function CommentsView({ initialData }: { initialData: YouTubeApiResponse 
           <div className="grid grid-cols-4 gap-3">
             {[
               { label: "Total", value: summary.total, icon: MessageCircle, bg: "bg-muted", iconCn: "text-muted-foreground", valueCn: "text-foreground", percent: null },
-              { label: "Positive", value: summary.positive, icon: SmilePlus, bg: "bg-green-500/10", iconCn: "text-green-600 dark:text-green-400", valueCn: "text-green-600 dark:text-green-400", percent: Math.round((summary.positive / summary.total) * 100) },
-              { label: "Neutral", value: summary.neutral, icon: Meh, bg: "bg-gray-100 dark:bg-gray-800", iconCn: "text-gray-600 dark:text-gray-400", valueCn: "text-gray-600 dark:text-gray-400", percent: Math.round((summary.neutral / summary.total) * 100) },
-              { label: "Negative", value: summary.negative, icon: Frown, bg: "bg-red-500/10", iconCn: "text-red-600 dark:text-red-400", valueCn: "text-red-600 dark:text-red-400", percent: Math.round((summary.negative / summary.total) * 100) },
+              { label: "Positive", value: summary.positive, icon: SmilePlus, bg: "bg-chart-1/10", iconCn: "text-chart-1", valueCn: "text-chart-1", percent: Math.round((summary.positive / summary.total) * 100) },
+              { label: "Neutral", value: summary.neutral, icon: Meh, bg: "bg-muted", iconCn: "text-muted-foreground", valueCn: "text-muted-foreground", percent: Math.round((summary.neutral / summary.total) * 100) },
+              { label: "Negative", value: summary.negative, icon: Frown, bg: "bg-destructive/10", iconCn: "text-destructive", valueCn: "text-destructive", percent: Math.round((summary.negative / summary.total) * 100) },
             ].map(({ label, value, icon: Icon, bg, iconCn, valueCn, percent }) => (
               <Card key={label} size="sm">
                 <CardHeader>

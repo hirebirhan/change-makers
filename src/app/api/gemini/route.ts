@@ -5,6 +5,15 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? "");
 
 type Mode = "analyze" | "topics" | "description" | "title";
 
+const MODEL_PRIORITY = [
+  'gemini-flash-latest',
+  'gemini-pro-latest',
+  'gemini-flash',
+  'gemini-pro'
+];
+
+let workingModel: string | null = null;
+
 function buildPrompt(mode: Mode, payload: Record<string, unknown>): string {
   const { channel, videos, trends, keyword, existingTitle, existingDescription } = payload as {
     channel: { channelName: string; channelDescription: string; subscriberCount: number; viewCount: number; videoCount: number };
@@ -119,16 +128,35 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "GEMINI_API_KEY not configured in .env.local" }, { status: 400 });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const prompt = buildPrompt(mode, payload);
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const modelsToTry = workingModel ? [workingModel, ...MODEL_PRIORITY] : MODEL_PRIORITY;
+    
+    let lastError: Error | null = null;
+    for (const modelName of modelsToTry) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        workingModel = modelName;
+        return NextResponse.json({ result: text, mode, modelUsed: modelName });
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        continue;
+      }
+    }
 
-    return NextResponse.json({ result: text, mode });
+    return NextResponse.json(
+      { error: `All models failed. Last error: ${lastError?.message}` },
+      { status: 500 }
+    );
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Gemini request failed" },
       { status: 500 }
     );
   }
+}
+
+export async function GET() {
+  return NextResponse.json({ model: workingModel || MODEL_PRIORITY[0] });
 }

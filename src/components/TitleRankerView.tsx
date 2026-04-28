@@ -33,6 +33,11 @@ interface TitleAnalysis {
   grade: string;
   dimensions: DimensionScore[];
   rankedAlternatives: RankedTitle[];
+  bestChoice?: {
+    title: string;
+    score: number;
+    whyBest: string;
+  };
   meta?: AnalysisMeta;
 }
 
@@ -44,23 +49,23 @@ interface RankedTitle {
 }
 
 function gradeColor(grade: string) {
-  if (grade === "A+" || grade === "A") return "text-success";
+  if (grade === "A+" || grade === "A") return "text-chart-1";
   if (grade === "B") return "text-primary";
-  if (grade === "C") return "text-warning";
+  if (grade === "C") return "text-chart-5";
   return "text-destructive";
 }
 
 function gradeBg(grade: string) {
-  if (grade === "A+" || grade === "A") return "bg-success/5 border-success/20";
+  if (grade === "A+" || grade === "A") return "bg-chart-1/5 border-chart-1/20";
   if (grade === "B") return "bg-primary/5 border-primary/20";
-  if (grade === "C") return "bg-warning/5 border-warning/20";
+  if (grade === "C") return "bg-chart-5/5 border-chart-5/20";
   return "bg-destructive/5 border-destructive/20";
 }
 
 function scoreBarColor(score: number, max: number) {
   const pct = score / max;
-  if (pct >= 0.8) return "bg-success";
-  if (pct >= 0.5) return "bg-warning";
+  if (pct >= 0.8) return "bg-chart-1";
+  if (pct >= 0.5) return "bg-chart-5";
   return "bg-destructive";
 }
 
@@ -69,7 +74,7 @@ function CopyBtn({ text }: { text: string }) {
   return (
     <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"
       onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); }}>
-      {copied ? <Check className="w-3.5 h-3.5 text-success" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}
+      {copied ? <Check className="w-3.5 h-3.5 text-chart-1" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}
     </Button>
   );
 }
@@ -118,45 +123,41 @@ export function TitleRankerView({ initialData }: { initialData: YouTubeApiRespon
 
   return (
     <AppShell channel={data.channel} onRefresh={refresh} refreshing={refreshing} lastUpdated={lastUpdated}>
-      <main className="flex-1 w-full px-6 py-8 space-y-8">
-
-        {/* Header */}
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
-              <Type className="w-5 h-5 text-primary" />
-            </div>
-            Title Ranker
-          </h1>
-          <p className="text-sm text-muted-foreground mt-2 ml-[52px]">Score your title across 7 SEO dimensions with AI-powered insights</p>
-        </div>
+      <main className="flex-1 w-full px-4 py-4 space-y-4">
 
         {/* Input */}
         <Card className="border-border/40">
           <CardHeader>
-            <CardTitle className="text-base">Analyse a Title</CardTitle>
-            <CardDescription>Enter any video title — we'll score it and suggest better-ranked alternatives based on your channel's top keywords</CardDescription>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Type className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <CardTitle className="text-base">Title Ranker</CardTitle>
+                <CardDescription>Score your title across 7 SEO dimensions with AI-powered insights</CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             <div className="flex gap-3">
               <Input
                 placeholder="e.g. How I built a full-stack app in one weekend"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAnalyze()}
-                className="flex-1 h-11 border-border/40 focus-visible:ring-ring/20"
+                className="flex-1"
               />
-              <Button onClick={handleAnalyze} disabled={!input.trim() || analyzing} className="gap-2 shrink-0 h-11 px-5">
+              <Button onClick={handleAnalyze} disabled={!input.trim() || analyzing} className="gap-2 shrink-0">
                 <Sparkles className="w-4 h-4" />
                 {analyzing ? "Analysing..." : "Analyse"}
               </Button>
             </div>
             {topKeywords.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-muted-foreground font-medium">Your top keywords:</span>
+                <span className="text-xs text-muted-foreground">Your top keywords:</span>
                 {topKeywords.slice(0, 8).map(kw => (
                   <button key={kw} onClick={() => setInput(prev => prev ? `${prev} ${kw}` : kw)}
-                    className="text-xs px-2.5 py-1 rounded-lg bg-secondary/50 hover:bg-accent transition-colors border border-border/40 font-medium">
+                    className="text-xs px-2 py-1 rounded-md bg-secondary/50 hover:bg-accent transition-colors">
                     {kw}
                   </button>
                 ))}
@@ -166,31 +167,31 @@ export function TitleRankerView({ initialData }: { initialData: YouTubeApiRespon
         </Card>
 
         {analysis && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Score overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {/* Grade */}
               <Card className={`border ${gradeBg(analysis.grade)}`}>
-                <CardContent className="pt-8 pb-7 flex flex-col items-center gap-2">
-                  <span className={`text-7xl font-black tabular-nums ${gradeColor(analysis.grade)}`}>{analysis.grade}</span>
-                  <span className="text-sm text-muted-foreground font-medium">Overall Grade</span>
-                  <span className={`text-3xl font-bold tabular-nums mt-2 ${gradeColor(analysis.grade)}`}>{analysis.totalScore}<span className="text-base font-normal text-muted-foreground">/100</span></span>
+                <CardContent className="pt-6 pb-6 flex flex-col items-center gap-2">
+                  <span className={`text-6xl font-black tabular-nums ${gradeColor(analysis.grade)}`}>{analysis.grade}</span>
+                  <span className="text-xs text-muted-foreground">Overall Grade</span>
+                  <span className={`text-2xl font-semibold tabular-nums mt-1 ${gradeColor(analysis.grade)}`}>{analysis.totalScore}<span className="text-sm font-normal text-muted-foreground">/100</span></span>
                 </CardContent>
               </Card>
 
               {/* Analysed title */}
-              <Card className="md:col-span-2 border-border/40">
+              <Card className="md:col-span-2">
                 <CardHeader>
-                  <CardDescription className="font-medium">Analysed title</CardDescription>
-                  <CardTitle className="text-base leading-snug font-semibold">&ldquo;{analysis.input}&rdquo;</CardTitle>
+                  <CardDescription>Analysed title</CardDescription>
+                  <CardTitle className="text-sm leading-snug">&ldquo;{analysis.input}&rdquo;</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
                     {analysis.dimensions.map(d => {
                       const pct = d.score / d.max;
                       return (
-                        <Badge key={d.label} variant="secondary" className="gap-1.5 font-normal bg-secondary/50">
-                          {pct >= 0.8 ? <CheckCircle2 className="w-3 h-3 text-success" /> : <AlertCircle className="w-3 h-3 text-warning" />}
+                        <Badge key={d.label} variant="secondary" className="gap-1.5">
+                          {pct >= 0.8 ? <CheckCircle2 className="w-3 h-3 text-chart-1" /> : <AlertCircle className="w-3 h-3 text-chart-5" />}
                           {d.label}
                         </Badge>
                       );
@@ -201,25 +202,23 @@ export function TitleRankerView({ initialData }: { initialData: YouTubeApiRespon
             </div>
 
             {/* Dimension breakdown */}
-            <Card className="border-border/40">
+            <Card>
               <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
-                    <BarChart2 className="w-4 h-4 text-primary" />
-                  </div>
+                <div className="flex items-center gap-2">
+                  <BarChart2 className="w-4 h-4 text-primary" />
                   <div>
-                    <CardTitle className="text-base">Dimension Breakdown</CardTitle>
+                    <CardTitle className="text-sm">Dimension Breakdown</CardTitle>
                     <CardDescription>Score across 7 SEO dimensions</CardDescription>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-5">
+              <CardContent className="space-y-4">
                 {analysis.dimensions.map((d) => (
                   <div key={d.label} className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">{d.label}</span>
                       <span className="text-sm tabular-nums font-semibold">
-                        <span className={d.score === d.max ? "text-success" : d.score >= d.max * 0.5 ? "text-warning" : "text-destructive"}>{d.score}</span>
+                        <span className={d.score === d.max ? "text-chart-1" : d.score >= d.max * 0.5 ? "text-chart-5" : "text-destructive"}>{d.score}</span>
                         <span className="text-muted-foreground font-normal">/{d.max}</span>
                       </span>
                     </div>
@@ -231,8 +230,8 @@ export function TitleRankerView({ initialData }: { initialData: YouTubeApiRespon
                     </div>
                     <p className="text-xs text-muted-foreground flex items-center gap-2 leading-relaxed">
                       {d.score >= d.max * 0.8
-                        ? <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
-                        : <AlertCircle className="w-3.5 h-3.5 text-warning shrink-0" />}
+                        ? <CheckCircle2 className="w-3.5 h-3.5 text-chart-1 shrink-0" />
+                        : <AlertCircle className="w-3.5 h-3.5 text-chart-5 shrink-0" />}
                       {d.feedback}
                     </p>
                   </div>
@@ -243,69 +242,80 @@ export function TitleRankerView({ initialData }: { initialData: YouTubeApiRespon
             {/* Metadata insights */}
             {analysis.meta && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <Card size="sm" className="border-border/40">
+                <Card size="sm">
                   <CardHeader>
                     <CardDescription className="text-xs">Search Intent</CardDescription>
                     <CardTitle className="text-sm capitalize">{analysis.meta.searchIntent.intent}</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="h-1.5 bg-muted/50 rounded-full overflow-hidden">
-                      <div className="h-full bg-primary rounded-full" style={{ width: `${analysis.meta.searchIntent.confidence * 100}%` }} />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mt-1">{Math.round(analysis.meta.searchIntent.confidence * 100)}% confident</p>
-                  </CardContent>
                 </Card>
-                <Card size="sm" className="border-border/40">
+                <Card size="sm">
                   <CardHeader>
                     <CardDescription className="text-xs">Sentiment</CardDescription>
                     <CardTitle className="text-sm capitalize">{analysis.meta.sentiment.sentiment}</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="h-1.5 bg-muted/50 rounded-full overflow-hidden">
-                      <div className="h-full bg-success rounded-full" style={{ width: `${analysis.meta.sentiment.confidence * 100}%` }} />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mt-1">{Math.round(analysis.meta.sentiment.confidence * 100)}% confident</p>
-                  </CardContent>
                 </Card>
-                <Card size="sm" className="border-border/40">
+                <Card size="sm">
                   <CardHeader>
                     <CardDescription className="text-xs">Emojis</CardDescription>
                     <CardTitle className="text-sm">{analysis.meta.emoji.count}</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-[10px] text-muted-foreground">{analysis.meta.emoji.placement === "none" ? "None" : `${analysis.meta.emoji.placement} placement`}</p>
-                  </CardContent>
                 </Card>
-                <Card size="sm" className="border-border/40">
+                <Card size="sm">
                   <CardHeader>
-                    <CardDescription className="text-xs">Character Limit</CardDescription>
-                    <CardTitle className="text-sm">{analysis.meta.characterLimits.length}</CardTitle>
+                    <CardDescription className="text-xs">Length</CardDescription>
+                    <CardTitle className="text-sm">{analysis.meta.characterLimits.length} chars</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-[10px] text-muted-foreground">
-                      {analysis.meta.characterLimits.mobileTruncated && analysis.meta.characterLimits.desktopTruncated ? "Truncated on both" :
-                       analysis.meta.characterLimits.mobileTruncated ? "Truncated on mobile" :
-                       analysis.meta.characterLimits.desktopTruncated ? "Truncated on desktop" : "Within limits"}
-                    </p>
-                  </CardContent>
                 </Card>
               </div>
             )}
 
             {/* Ranked alternatives */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
-                <h2 className="text-base font-semibold">Ranked Alternatives</h2>
-                <p className="text-sm text-muted-foreground mt-1">Titles ranked by predicted SEO performance — click any to analyse it</p>
+                <h2 className="text-sm font-semibold">AI's Best Choice</h2>
+                <p className="text-xs text-muted-foreground mt-1">Gemini analyzed all alternatives and picked the highest-scoring title</p>
               </div>
-              <div className="space-y-3">
-                {analysis.rankedAlternatives.map((alt, i) => (
-                  <div key={i} className="flex items-start gap-4 p-5 rounded-2xl border border-border/40 bg-card/50 hover:shadow-lg hover:border-border/60 transition-all group">
-                    {/* Rank badge */}
-                    <div className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold ${i === 0 ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground"}`}>
-                      #{i + 1}
+              
+              {analysis.bestChoice && (
+                <div className="p-4 rounded-xl border-2 border-primary bg-primary/5">
+                  <div className="flex items-start gap-3">
+                    <div className="shrink-0 w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                      <Sparkles className="w-5 h-5 text-primary-foreground" />
                     </div>
                     <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <p className="text-sm font-semibold leading-snug flex-1">{analysis.bestChoice.title}</p>
+                        <CopyBtn text={analysis.bestChoice.title} />
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{analysis.bestChoice.whyBest}</p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-xs">
+                          Score: {analysis.bestChoice.score}/100
+                        </Badge>
+                        <Badge variant="secondary" className="bg-chart-1/10 text-chart-1 border-chart-1/20 text-xs">
+                          AI Recommended
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Other alternatives */}
+            <div className="space-y-3">
+              <div>
+                <h2 className="text-sm font-semibold">Other Alternatives</h2>
+                <p className="text-xs text-muted-foreground mt-1">Additional high-scoring titles ranked by predicted SEO performance</p>
+              </div>
+              <div className="space-y-2">
+                {analysis.rankedAlternatives.map((alt, i) => (
+                  <div key={i} className="flex items-start gap-3 p-4 rounded-xl border bg-card hover:shadow-md hover:border-border transition-all group">
+                    {/* Rank badge */}
+                    <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold ${i === 0 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                      #{i + 1}
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-1.5">
                       <div className="flex items-start gap-2">
                         <p className="text-sm font-semibold leading-snug flex-1">{alt.title}</p>
                         <div className="flex items-center gap-1 shrink-0">
@@ -319,7 +329,7 @@ export function TitleRankerView({ initialData }: { initialData: YouTubeApiRespon
                       <p className="text-xs text-muted-foreground leading-relaxed">{alt.improvement}</p>
                     </div>
                     <div className="shrink-0 text-right">
-                      <span className="text-base font-bold tabular-nums text-success">{alt.totalScore}</span>
+                      <span className="text-sm font-semibold tabular-nums text-chart-1">{alt.totalScore}</span>
                       <span className="text-xs text-muted-foreground">/100</span>
                     </div>
                   </div>
@@ -331,13 +341,13 @@ export function TitleRankerView({ initialData }: { initialData: YouTubeApiRespon
 
         {/* Empty state */}
         {!analysis && (
-          <div className="flex flex-col items-center justify-center py-24 text-center space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-primary/5 flex items-center justify-center">
-              <Type className="w-8 h-8 text-primary" />
+          <div className="flex flex-col items-center justify-center py-20 text-center space-y-3">
+            <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Type className="w-7 h-7 text-primary" />
             </div>
-            <div className="space-y-2">
-              <p className="text-base font-semibold">Enter a title above to get started</p>
-              <p className="text-sm text-muted-foreground max-w-md leading-relaxed">We'll score it across 7 SEO dimensions with AI-powered insights — character limits, keyword relevance, power words, structure, search intent, emoji usage, and sentiment</p>
+            <div className="space-y-1">
+              <p className="text-sm font-semibold">Enter a title above to get started</p>
+              <p className="text-xs text-muted-foreground max-w-md leading-relaxed">AI will score it across 7 SEO dimensions and generate optimized alternatives, then pick the best one for you</p>
             </div>
           </div>
         )}

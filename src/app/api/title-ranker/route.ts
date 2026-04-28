@@ -3,6 +3,35 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
 
+const MODEL_PRIORITY = [
+  'gemini-flash-latest',
+  'gemini-pro-latest',
+  'gemini-flash',
+  'gemini-pro'
+];
+
+let workingModel: string | null = null;
+
+async function callGemini(prompt: string): Promise<string> {
+  if (!genAI) throw new Error("Gemini API not configured");
+  
+  const modelsToTry = workingModel ? [workingModel, ...MODEL_PRIORITY] : MODEL_PRIORITY;
+  
+  for (const modelName of modelsToTry) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      const text = result.response.text();
+      workingModel = modelName;
+      return text;
+    } catch (error) {
+      continue;
+    }
+  }
+  
+  throw new Error("All Gemini models failed");
+}
+
 const POWER_WORDS = [
   "ultimate", "complete", "proven", "best", "top", "guide", "how", "why", "what",
   "secret", "fast", "easy", "free", "new", "now", "today", "never", "always",
@@ -103,200 +132,96 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
     }
 
-    const lower = title.toLowerCase();
-    const words = lower.split(/\s+/).filter(w => w.length > 0);
-    const len = title.length;
-    
-    // Enhanced dimensions
-    const dimensions = [
-      {
-        label: "Character limits",
-        score: analyzeCharacterLimits(title).score,
-        max: 20,
-        feedback: analyzeCharacterLimits(title).feedback
-      },
-      {
-        label: "Keyword relevance",
-        score: (() => {
-          const top3 = topKeywords.slice(0, 3);
-          const inFirst3 = top3.some((kw: string) => words.slice(0, 3).some((w: string) => w.includes(kw)));
-          const hasAny = top3.some((kw: string) => lower.includes(kw));
-          const hasMultiple = top3.filter((kw: string) => lower.includes(kw)).length;
-          
-          if (inFirst3 && hasMultiple >= 2) return 20;
-          if (inFirst3) return 16;
-          if (hasMultiple >= 2) return 12;
-          if (hasAny) return 8;
-          return 0;
-        })(),
-        max: 20,
-        feedback: (() => {
-          const top3 = topKeywords.slice(0, 3);
-          const inFirst3 = top3.some((kw: string) => words.slice(0, 3).some(w => w.includes(kw)));
-          const hasMultiple = top3.filter((kw: string) => lower.includes(kw)).length;
-          
-          if (inFirst3 && hasMultiple >= 2) return `Multiple top keywords in first 3 words — excellent`;
-          if (inFirst3) return `Top keyword in first 3 words — good`;
-          if (hasMultiple >= 2) return `Has ${hasMultiple} top keywords, but not at start`;
-          if (top3.some((kw: string) => lower.includes(kw))) return `Keyword present but not prominent`;
-          return `No channel keywords detected`;
-        })()
-      },
-      {
-        label: "Power words & numbers",
-        score: (() => {
-          const hasNumber = /\d/.test(title);
-          const powerCount = POWER_WORDS.filter(w => lower.includes(w)).length;
-          return (hasNumber ? 8 : 0) + Math.min(powerCount * 4, 12);
-        })(),
-        max: 20,
-        feedback: (() => {
-          const hasNumber = /\d/.test(title);
-          const powerCount = POWER_WORDS.filter(w => lower.includes(w)).length;
-          
-          if (hasNumber && powerCount >= 2) return `Number + ${powerCount} power words — strong CTR signal`;
-          if (hasNumber && powerCount === 1) return `Number + power word — good combination`;
-          if (powerCount >= 2) return `${powerCount} power words — add a number for impact`;
-          if (hasNumber) return `Has a number — add power words for CTR`;
-          if (powerCount === 1) return `Has 1 power word — add a number`;
-          return `No power words or numbers — add both`;
-        })()
-      },
-      {
-        label: "Structure & clarity",
-        score: (() => {
-          const hasSeparator = /[|:\-–—]/.test(title);
-          const hasQuestion = /\?/.test(title);
-          const wordCount = words.length;
-          
-          let score = 0;
-          if (hasSeparator) score += 10;
-          if (hasQuestion) score += 8;
-          if (wordCount >= 5 && wordCount <= 12) score += 7;
-          else if (wordCount >= 3 && wordCount <= 15) score += 4;
-          
-          return score;
-        })(),
-        max: 25,
-        feedback: (() => {
-          const hasSeparator = /[|:\-–—]/.test(title);
-          const hasQuestion = /\?/.test(title);
-          const wordCount = words.length;
-          
-          const parts = [];
-          if (hasSeparator) parts.push("separator");
-          if (hasQuestion) parts.push("question");
-          if (wordCount >= 5 && wordCount <= 12) parts.push("ideal word count");
-          
-          if (parts.length >= 2) return `Has ${parts.join(" + ")} — excellent structure`;
-          if (parts.length === 1) return `Has ${parts[0]} — good structure`;
-          return `Consider adding separator or question format`;
-        })()
-      },
-      {
-        label: "Search intent",
-        score: (() => {
-          const { intent, confidence } = detectSearchIntent(title);
-          return intent === "mixed" ? 10 : Math.round(confidence * 10);
-        })(),
-        max: 10,
-        feedback: (() => {
-          const { intent, confidence } = detectSearchIntent(title);
-          const pct = Math.round(confidence * 100);
-          if (intent === "informational") return `Informational intent (${pct}% confident) — good for educational content`;
-          if (intent === "transactional") return `Transactional intent (${pct}% confident) — good for reviews/comparisons`;
-          return `Mixed intent — could be clearer for search`;
-        })()
-      },
-      {
-        label: "Emoji usage",
-        score: analyzeEmoji(title).score,
-        max: 10,
-        feedback: analyzeEmoji(title).feedback
-      },
-      {
-        label: "Sentiment tone",
-        score: (() => {
-          const { sentiment, confidence } = detectSentiment(title);
-          if (sentiment === "exciting") return 10;
-          if (sentiment === "positive") return Math.round(6 + confidence * 4);
-          if (sentiment === "negative") return 3;
-          return 5;
-        })(),
-        max: 10,
-        feedback: (() => {
-          const { sentiment } = detectSentiment(title);
-          if (sentiment === "exciting") return "Exciting tone — drives curiosity and clicks";
-          if (sentiment === "positive") return "Positive tone — builds trust";
-          if (sentiment === "negative") return "Negative tone — use sparingly for controversy";
-          return "Neutral tone — consider adding emotional hook";
-        })()
-      }
-    ];
-
-    const totalScore = dimensions.reduce((s, d) => s + d.score, 0);
-    const grade = totalScore >= 90 ? "A+" : totalScore >= 80 ? "A" : totalScore >= 70 ? "B" : totalScore >= 60 ? "C" : totalScore >= 50 ? "D" : "F";
-
-    // Generate AI-powered alternatives
-    let aiAlternatives: { title: string; reason: string }[] = [];
-    
-    if (genAI && topKeywords.length > 0) {
-      try {
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const prompt = `Generate 6 high-CTR YouTube video title alternatives for a tech/education channel.
-        
-        Original title: "${title}"
-        Channel's top keywords: ${topKeywords.slice(0, 5).join(", ")}
-        
-        Rules:
-        - 40-70 characters optimal
-        - Include numbers or power words
-        - Use separators (|, :) or questions
-        - Match informational/transactional intent
-        - Make them click-worthy but not clickbait
-        
-        Return ONLY a JSON array with format: [{"title": "...", "reason": "..."}]`;
-        
-        const result = await model.generateContent(prompt);
-        const response = await result.response.text();
-        const cleaned = response.replace(/```json\n?|\n?```/g, '').trim();
-        
-        try {
-          aiAlternatives = JSON.parse(cleaned);
-        } catch (e) {
-          console.error("Failed to parse AI response:", e);
-        }
-      } catch (e) {
-        console.error("AI generation failed:", e);
-      }
+    if (!genAI) {
+      return NextResponse.json({ error: "GEMINI_API_KEY not configured" }, { status: 400 });
     }
 
-    // Fallback template-based alternatives
-    const topKw = topKeywords[0] ?? "topic";
-    const topKwCap = topKw.charAt(0).toUpperCase() + topKw.slice(1);
-    const year = new Date().getFullYear();
-    
-    const templateAlternatives = [
-      { title: `${topKwCap}: The Complete Guide (${year})`, reason: "Evergreen format with year — high search volume" },
-      { title: `How to Master ${topKwCap} | Step-by-Step Tutorial`, reason: "How-to with separator — strong intent match" },
-      { title: `${topKwCap} Tips That Actually Work (Most Get This Wrong)`, reason: "Curiosity gap + social proof" },
-      { title: `I Tried ${topKwCap} for 30 Days — Here's What Happened`, reason: "Personal story — high watch time signal" },
-      { title: `Top 10 ${topKwCap} Mistakes You're Making in ${year}`, reason: "Listicle + year — proven CTR formula" },
-      { title: `${topKwCap} Explained: Everything You Need to Know`, reason: "Educational — targets 'explained' queries" },
-    ];
+    const prompt = `You are a YouTube SEO expert. Analyze this video title and provide detailed scoring.
 
-    const alternatives = aiAlternatives.length > 0 ? aiAlternatives : templateAlternatives;
-    const rankedAlternatives = alternatives.map((alt, i) => ({
-      title: alt.title,
-      totalScore: 95 - (i * 5),
-      improvement: alt.reason
+Title: "${title}"
+Channel's top keywords: ${topKeywords.slice(0, 8).join(", ")}
+
+CRITICAL RULES:
+- Each dimension has a MAX score - NEVER exceed it
+- Total score MUST be ≤ 100 (sum of all dimension scores)
+- Alternative titles should score 75-95 (realistic, not perfect)
+- Be honest and critical in scoring
+
+Analyze across these 7 dimensions:
+1. Character limits (MAX 20 pts) - Optimal 40-60 chars, penalize if too short/long
+2. Keyword relevance (MAX 20 pts) - Top keywords in first 3 words = max score
+3. Power words & numbers (MAX 20 pts) - Numbers + power words like "ultimate", "complete", "proven"
+4. Structure & clarity (MAX 25 pts) - Separators (|, :), questions, 5-12 words ideal
+5. Search intent (MAX 10 pts) - Clear informational/transactional intent
+6. Emoji usage (MAX 10 pts) - 0-1 emoji at start = good, 2+ = bad
+7. Sentiment tone (MAX 10 pts) - Exciting/positive > neutral > negative
+
+Then generate 6 alternative titles that score 75-95 points (be realistic).
+
+Return ONLY valid JSON (no markdown, no code blocks):
+{
+  "dimensions": [
+    {"label": "Character limits", "score": 18, "max": 20, "feedback": "52 chars — optimal"},
+    {"label": "Keyword relevance", "score": 12, "max": 20, "feedback": "Has keyword but not at start"},
+    {"label": "Power words & numbers", "score": 8, "max": 20, "feedback": "Has number but no power words"},
+    {"label": "Structure & clarity", "score": 15, "max": 25, "feedback": "Has separator — good structure"},
+    {"label": "Search intent", "score": 7, "max": 10, "feedback": "Clear informational intent"},
+    {"label": "Emoji usage", "score": 0, "max": 10, "feedback": "No emojis — consider adding one"},
+    {"label": "Sentiment tone", "score": 6, "max": 10, "feedback": "Neutral tone — add emotional hook"}
+  ],
+  "alternatives": [
+    {"title": "...", "score": 88, "reason": "..."},
+    {"title": "...", "score": 85, "reason": "..."},
+    {"title": "...", "score": 82, "reason": "..."},
+    {"title": "...", "score": 80, "reason": "..."},
+    {"title": "...", "score": 78, "reason": "..."},
+    {"title": "...", "score": 75, "reason": "..."}
+  ],
+  "bestChoice": {
+    "title": "...",
+    "score": 88,
+    "whyBest": "This title scores highest because it combines optimal character length, strong keyword placement, power words, and clear structure."
+  }
+}`;
+
+    const response = await callGemini(prompt);
+    const cleaned = response.replace(/```json\n?|\n?```/g, '').trim();
+    const aiResult = JSON.parse(cleaned);
+
+    // Validate and cap dimension scores
+    const validatedDimensions = aiResult.dimensions.map((d: { label: string; score: number; max: number; feedback: string }) => ({
+      label: d.label,
+      score: Math.min(d.score, d.max),
+      max: d.max,
+      feedback: d.feedback
     }));
 
+    const totalScore = Math.min(validatedDimensions.reduce((s: number, d: { score: number }) => s + d.score, 0), 100);
+    const grade = totalScore >= 90 ? "A+" : totalScore >= 80 ? "A" : totalScore >= 70 ? "B" : totalScore >= 60 ? "C" : totalScore >= 50 ? "D" : "F";
+
+    // Validate and cap alternative scores
+    const rankedAlternatives = aiResult.alternatives
+      .map((alt: { title: string; score: number; reason: string }) => ({
+        title: alt.title,
+        totalScore: Math.min(alt.score, 100),
+        improvement: alt.reason
+      }))
+      .sort((a: { totalScore: number }, b: { totalScore: number }) => b.totalScore - a.totalScore);
+
+    // Validate and cap best choice score
+    const bestChoice = aiResult.bestChoice ? {
+      title: aiResult.bestChoice.title,
+      score: Math.min(aiResult.bestChoice.score, 100),
+      whyBest: aiResult.bestChoice.whyBest
+    } : undefined;
+
     return NextResponse.json({
+      input: title,
       totalScore,
       grade,
-      dimensions,
+      dimensions: validatedDimensions,
       rankedAlternatives,
+      bestChoice,
       meta: {
         searchIntent: detectSearchIntent(title),
         sentiment: detectSentiment(title),
@@ -305,6 +230,7 @@ export async function POST(req: NextRequest) {
       }
     });
   } catch (error) {
+    console.error("Title ranker error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Analysis failed" },
       { status: 500 }

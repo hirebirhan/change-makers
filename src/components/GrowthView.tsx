@@ -51,8 +51,8 @@ export function GrowthView({ initialData, milestones, streak }: GrowthViewProps)
           <Card size="sm">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-orange-500/10">
-                  <Flame className="size-3.5 text-orange-500" />
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-chart-5/10">
+                  <Flame className="size-3.5 text-chart-5" />
                 </div>
                 <CardDescription className="text-xs">Current Streak</CardDescription>
               </div>
@@ -189,7 +189,7 @@ export function GrowthView({ initialData, milestones, streak }: GrowthViewProps)
                 </Badge>
               )}
               {streak.longestStreak >= 12 && (
-                <Badge variant="default" className="justify-center py-1.5 text-xs bg-orange-500">
+                <Badge variant="default" className="justify-center py-1.5 text-xs bg-chart-5">
                   <Flame className="w-3 h-3 mr-1" />
                   12 Week Streak
                 </Badge>

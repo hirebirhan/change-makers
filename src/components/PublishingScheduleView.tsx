@@ -156,8 +156,8 @@ export function PublishingScheduleView({ initialData }: { initialData: YouTubeAp
           <Card size="sm">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-orange-500/10">
-                  <Globe className="size-3.5 text-orange-500" />
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-chart-5/10">
+                  <Globe className="size-3.5 text-chart-5" />
                 </div>
                 <CardDescription className="text-xs">Timezone</CardDescription>
               </div>

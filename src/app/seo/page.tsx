@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getYouTubeData } from "@/lib/youtube-server";
+import { getSeoData } from "@/lib/seo-server";
 import { SeoView } from "@/components/SeoView";
 
 export const metadata: Metadata = {
   title: "SEO Studio",
-  description: "Keyword insights, video SEO scores, Google Trends analysis, and title suggestions for your YouTube channel.",
+  description: "Keyword insights, video SEO scores, and title suggestions for your YouTube channel.",
 };
 
 export default async function SeoPage() {
@@ -18,5 +19,7 @@ export default async function SeoPage() {
   }
   
   const data = await getYouTubeData();
-  return <SeoView initialData={data} />;
+  const seoData = await getSeoData(data.videos);
+  
+  return <SeoView initialData={data} initialSeoData={seoData} />;
 }

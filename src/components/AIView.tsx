@@ -83,6 +83,7 @@ export function AIView({ initialData }: { initialData: YouTubeApiResponse }) {
   const [titleInput, setTitleInput] = useState("");
   const [keywordInput, setKeywordInput] = useState("");
   const [descTitleInput, setDescTitleInput] = useState("");
+  const [modelName, setModelName] = useState<string>("gemini-pro");
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
@@ -93,6 +94,13 @@ export function AIView({ initialData }: { initialData: YouTubeApiResponse }) {
     } finally {
       setRefreshing(false);
     }
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/gemini")
+      .then((r) => r.json())
+      .then((d) => { if (d.model) setModelName(d.model); })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -116,6 +124,7 @@ export function AIView({ initialData }: { initialData: YouTubeApiResponse }) {
       });
       const json = await res.json();
       if (json.error) { setApiError(json.error); return; }
+      if (json.modelUsed) setModelName(json.modelUsed);
       setResults((prev) => ({ ...prev, [mode]: json.result }));
     } catch (e) {
       setApiError(e instanceof Error ? e.message : "Request failed");
@@ -135,7 +144,7 @@ export function AIView({ initialData }: { initialData: YouTubeApiResponse }) {
             <h1 className="text-xl font-semibold tracking-tight">AI Studio</h1>
             <p className="text-sm text-muted-foreground leading-tight">Powered by Google Gemini — channel analysis, topic ideas, and content writing</p>
           </div>
-          <Badge variant="secondary" className="ml-auto shrink-0">gemini-1.5-flash</Badge>
+          <Badge variant="secondary" className="ml-auto shrink-0">{modelName}</Badge>
         </div>
 
         {apiError && (

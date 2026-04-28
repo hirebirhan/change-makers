@@ -142,7 +142,7 @@ export function PerformanceView({ initialData, performance }: PerformanceViewPro
               
               return (
                 <div key={perf.video.id} className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center justify-center w-4 h-4 rounded-full bg-orange-500/10 text-orange-600 font-semibold text-xs shrink-0">
+                  <div className="flex items-center justify-center w-4 h-4 rounded-full bg-chart-5/10 text-chart-5 font-semibold text-xs shrink-0">
                     {index + 1}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -150,7 +150,7 @@ export function PerformanceView({ initialData, performance }: PerformanceViewPro
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
                     {suggestions.length > 0 && (
-                      <Badge variant="outline" className="text-xs bg-orange-50 text-orange-600 border-orange-200">
+                      <Badge variant="outline" className="text-xs bg-chart-5/10 text-chart-5 border-chart-5/20">
                         {suggestions[0]}
                       </Badge>
                     )}

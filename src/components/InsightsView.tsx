@@ -117,7 +117,7 @@ export function InsightsView({ initialData }: InsightsViewProps) {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Lightbulb className="size-4 text-orange-500" />
+              <Lightbulb className="size-4 text-chart-5" />
               <CardTitle className="text-base font-semibold">Quick Wins</CardTitle>
             </div>
             <CardDescription className="text-xs">High-impact actions you can take today</CardDescription>
