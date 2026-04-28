@@ -42,6 +42,61 @@ function analyzeKeywords(
     .slice(0, 30);
 }
 
+function buildRecommendedKeywords(
+  keywords: { keyword: string; totalViews: number }[],
+  trends: string[],
+  videos: { tags: string[] }[]
+): { keyword: string; searchVolume: string; competition: string; reason: string }[] {
+  const existing = new Set(videos.flatMap((v) => v.tags.map((t) => t.toLowerCase())));
+  const recommended: { keyword: string; searchVolume: string; competition: string; reason: string }[] = [];
+
+  // Get top performing keywords from your content
+  const topKw = keywords.slice(0, 5);
+  
+  // Add your best performing keywords you haven't fully optimized
+  for (const { keyword: kw, totalViews } of topKw) {
+    if (kw.length > 3 && !existing.has(kw)) {
+      recommended.push({
+        keyword: kw,
+        searchVolume: "Data from your videos",
+        competition: "Proven",
+        reason: `Already driving ${(totalViews / 1000).toFixed(0)}K views - optimize more content around this`,
+      });
+    }
+  }
+
+  // Add trending topics (actual single keywords/short phrases)
+  for (const trend of trends.slice(0, 8)) {
+    const cleanTrend = trend.toLowerCase().trim();
+    if (!existing.has(cleanTrend) && trend.split(' ').length <= 3) {
+      recommended.push({
+        keyword: trend,
+        searchVolume: "Trending now",
+        competition: "High",
+        reason: "Currently trending in your region",
+      });
+    }
+  }
+
+  // Add related keywords based on your niche
+  const relatedSuffixes = ["tutorial", "guide", "tips", "review", "explained", "beginner"];
+  for (const { keyword: kw } of topKw.slice(0, 3)) {
+    for (const suffix of relatedSuffixes.slice(0, 2)) {
+      const combined = `${kw} ${suffix}`;
+      if (!existing.has(combined.toLowerCase())) {
+        recommended.push({
+          keyword: combined,
+          searchVolume: "Related to your niche",
+          competition: "Medium",
+          reason: `Variation of your successful "${kw}" content`,
+        });
+      }
+    }
+  }
+
+  return recommended.slice(0, 15);
+}
+
 function buildTitleSuggestions(
   keywords: { keyword: string; totalViews: number }[],
   trends: string[]
@@ -127,6 +182,7 @@ export async function POST(req: NextRequest) {
     const { videos, geo = "US" } = await req.json();
     const trends = await fetchTrends(geo);
     const keywords = analyzeKeywords(videos);
+    const recommendedKeywords = buildRecommendedKeywords(keywords, trends, videos);
     const titleSuggestions = buildTitleSuggestions(keywords, trends);
     const tagGaps = findTagGaps(videos, trends);
 
@@ -144,7 +200,7 @@ export async function POST(req: NextRequest) {
       return { id: v.id, title: v.title, score, issues: buildIssues(v), suggestions: buildSuggestions(v) };
     });
 
-    return NextResponse.json({ trends, keywords, titleSuggestions, tagGaps, videoScores });
+    return NextResponse.json({ trends, keywords, recommendedKeywords, titleSuggestions, tagGaps, videoScores });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "SEO analysis failed" },

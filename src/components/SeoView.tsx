@@ -24,6 +24,7 @@ interface VideoScore {
 interface SeoData {
   trends: string[];
   keywords: { keyword: string; count: number; totalViews: number }[];
+  recommendedKeywords: { keyword: string; searchVolume: string; competition: string; reason: string }[];
   titleSuggestions: { suggestion: string; reason: string }[];
   tagGaps: string[];
   videoScores: VideoScore[];
@@ -178,14 +179,22 @@ export function SeoView({ initialData }: { initialData: YouTubeApiResponse }) {
     finally { setRefreshing(false); }
   }, []);
 
-  useEffect(() => {
+  const loadSeoData = useCallback(async () => {
     setSeoLoading(true);
-    fetch("/api/seo", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ videos: data.videos, geo }),
-    }).then(r => r.json()).then(setSeo).finally(() => setSeoLoading(false));
-  }, [data, geo]);
+    try {
+      const response = await fetch("/api/seo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ videos: data.videos, geo }),
+      });
+      const result = await response.json();
+      setSeo(result);
+    } finally {
+      setSeoLoading(false);
+    }
+  }, [data.videos, geo]);
+
+  useEffect(() => { loadSeoData(); }, [loadSeoData]);
 
   return (
     <AppShell channel={data.channel} onRefresh={refresh} refreshing={refreshing} lastUpdated={lastUpdated}>
@@ -403,30 +412,35 @@ export function SeoView({ initialData }: { initialData: YouTubeApiResponse }) {
                     <BarChart2 className="w-3.5 h-3.5 text-primary" />
                   </div>
                   <div>
-                    <CardTitle className="text-base font-semibold">Top Keywords</CardTitle>
-                    <CardDescription className="text-xs">Ranked by total views driven</CardDescription>
+                    <CardTitle className="text-base font-semibold">Recommended Keywords</CardTitle>
+                    <CardDescription className="text-xs">Keywords to target based on your content performance</CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <div className="p-4 pt-0">
                 {seoLoading ? (
-                  <div className="space-y-2">{[...Array(10)].map((_, i) => <Skeleton key={i} className="h-6 w-full rounded-lg" />)}</div>
+                  <div className="space-y-2">{[...Array(10)].map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}</div>
                 ) : (
                   <div className="space-y-2">
-                    {seo?.keywords.map((kw, i) => {
-                      const maxViews = seo.keywords[0]?.totalViews || 1;
-                      const pct = Math.round((kw.totalViews / maxViews) * 100);
+                    {seo?.recommendedKeywords.map((kw, i) => {
+                      const compColor = kw.competition === "Low" ? "text-green-600 dark:text-green-400" : kw.competition === "Medium" ? "text-orange-600 dark:text-orange-400" : kw.competition === "High" ? "text-red-600 dark:text-red-400" : "text-primary";
+                      const compBg = kw.competition === "Low" ? "bg-green-500/10" : kw.competition === "Medium" ? "bg-orange-500/10" : kw.competition === "High" ? "bg-red-500/10" : "bg-primary/10";
                       return (
-                        <div key={kw.keyword} className="flex items-center gap-2.5 group">
-                          <span className="text-xs text-muted-foreground w-6 text-right shrink-0 tabular-nums font-medium">#{i + 1}</span>
-                          <span className="text-xs font-medium w-32 shrink-0 truncate">{kw.keyword}</span>
-                          <div className="flex-1 h-2 bg-muted/50 rounded-full overflow-hidden">
-                            <div className="h-full bg-primary rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+                        <div key={i} className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+                          <span className="text-xs text-muted-foreground w-6 shrink-0 tabular-nums">#{i + 1}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold mb-0.5">{kw.keyword}</p>
+                            <p className="text-xs text-muted-foreground">{kw.reason}</p>
                           </div>
-                          <span className="text-xs text-muted-foreground w-16 text-right shrink-0 tabular-nums">
-                            {kw.totalViews >= 1000 ? (kw.totalViews / 1000).toFixed(1) + "K" : kw.totalViews}
-                          </span>
-                          <Badge variant="outline" className="text-xs shrink-0 w-9 justify-center font-normal h-5 px-2">{kw.count}×</Badge>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <div className="text-right">
+                              <p className="text-xs text-muted-foreground mb-0.5">Source</p>
+                              <p className="text-xs font-medium">{kw.searchVolume}</p>
+                            </div>
+                            <Badge variant="outline" className={`text-xs h-6 px-2 font-medium ${compBg} ${compColor} border-0`}>
+                              {kw.competition}
+                            </Badge>
+                          </div>
                         </div>
                       );
                     })}
