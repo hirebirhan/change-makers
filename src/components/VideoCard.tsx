@@ -40,7 +40,7 @@ export default function VideoCard({ video, rank }: VideoCardProps) {
           </div>
         )}
         {rank && (
-          <span className="absolute bottom-0.5 right-0.5 bg-black/70 text-white text-[9px] font-bold px-1 rounded leading-4">
+          <span className="absolute bottom-0.5 right-0.5 bg-black/70 text-white text-xs font-bold px-1 rounded leading-4">
             #{rank}
           </span>
         )}
@@ -56,7 +56,7 @@ export default function VideoCard({ video, rank }: VideoCardProps) {
         >
           {video.title}
         </a>
-        <div className="flex items-center gap-2.5 mt-1 text-[11px] text-muted-foreground">
+        <div className="flex items-center gap-2.5 mt-1 text-xs text-muted-foreground">
           <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{formatNumber(video.viewCount)}</span>
           <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" />{formatNumber(video.likeCount)}</span>
           <span className="ml-auto">{timeAgo(video.publishedAt)}</span>

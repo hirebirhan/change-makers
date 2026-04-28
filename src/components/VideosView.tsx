@@ -129,29 +129,29 @@ export function VideosView({ initialData }: { initialData: YouTubeApiResponse })
                 )}
                 <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1.5">
                   {video.isShort && (
-                    <span className="bg-yt-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                    <span className="bg-yt-red text-white text-xs font-bold px-1.5 py-0.5 rounded">
                       SHORT
                     </span>
                   )}
-                  <span className="bg-black/70 text-white text-[10px] font-medium px-1.5 py-0.5 rounded">
+                  <span className="bg-black/70 text-white text-xs font-medium px-1.5 py-0.5 rounded">
                     {video.duration}
                   </span>
                 </div>
               </div>
               <CardContent className="p-3">
                 <p className="text-xs font-semibold line-clamp-2 leading-tight mb-2">{video.title}</p>
-                <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{formatNumber(video.viewCount)}</span>
                   <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" />{formatNumber(video.likeCount)}</span>
                   <span className="flex items-center gap-1"><MessageCircle className="w-3 h-3" />{formatNumber(video.commentCount)}</span>
                 </div>
                 <div className="flex items-center gap-1.5 mt-2">
                   <Clock className="w-3 h-3 text-muted-foreground" />
-                  <span className="text-[11px] text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     {new Date(video.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                   </span>
                   {video.tags.length > 0 && (
-                    <Badge variant="secondary" className="ml-auto text-[10px]">{video.tags.length} tags</Badge>
+                    <Badge variant="secondary" className="ml-auto text-xs">{video.tags.length} tags</Badge>
                   )}
                 </div>
               </CardContent>

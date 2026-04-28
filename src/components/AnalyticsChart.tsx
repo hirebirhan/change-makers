@@ -104,7 +104,7 @@ export default function AnalyticsChart({ data }: AnalyticsChartProps) {
 
         <CardContent>
           <TabsContent value="views">
-            <ChartContainer config={viewsConfig} className="h-[260px] w-full">
+            <ChartContainer config={viewsConfig} className="h-64 w-full">
               <AreaChart data={sliced} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="fillViews" x1="0" y1="0" x2="0" y2="1">
@@ -141,7 +141,7 @@ export default function AnalyticsChart({ data }: AnalyticsChartProps) {
           </TabsContent>
 
           <TabsContent value="subscribers">
-            <ChartContainer config={subscribersConfig} className="h-[260px] w-full">
+            <ChartContainer config={subscribersConfig} className="h-64 w-full">
               <AreaChart data={sliced} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="fillGained" x1="0" y1="0" x2="0" y2="1">
@@ -192,7 +192,7 @@ export default function AnalyticsChart({ data }: AnalyticsChartProps) {
 
           <TabsContent value="audience">
             <div className="flex flex-col sm:flex-row items-center gap-8 py-4">
-              <ChartContainer config={audienceConfig} className="h-[180px] w-[180px]">
+              <ChartContainer config={audienceConfig} className="h-48 w-48">
                 <PieChart>
                   <ChartTooltip content={<ChartTooltipContent hideLabel />} />
                   <Pie

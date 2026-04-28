@@ -1,7 +1,7 @@
 "use client";
 
 import { ChannelStats } from "@/types/youtube";
-import { Users, Eye, PlayCircle, Heart } from "lucide-react";
+import { Users, Eye, PlayCircle, Clock, TrendingUp, TrendingDown } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Tooltip,
@@ -12,6 +12,12 @@ import {
 
 interface ChannelOverviewProps {
   stats: ChannelStats;
+  totalWatchTimeHours?: number;
+  trends?: {
+    views: number;
+    watchTime: number;
+    videos: number;
+  };
 }
 
 function formatNumber(num: number | undefined): string {
@@ -21,18 +27,18 @@ function formatNumber(num: number | undefined): string {
   return num.toLocaleString();
 }
 
-const STATS = (stats: ChannelStats) => [
-  { icon: Users,      label: "Subscribers",     value: formatNumber(stats.subscriberCount), exact: stats.subscriberCount ?? 0, iconCn: "text-primary",          bgCn: "bg-primary/10"   },
-  { icon: Eye,        label: "Total Views",      value: formatNumber(stats.viewCount),       exact: stats.viewCount ?? 0,       iconCn: "text-muted-foreground",  bgCn: "bg-muted"        },
-  { icon: PlayCircle, label: "Videos",           value: stats.videoCount.toString(),         exact: stats.videoCount ?? 0,      iconCn: "text-primary",          bgCn: "bg-primary/10"   },
-  { icon: Heart,      label: "Total Engagement", value: formatNumber(stats.totalEngagement), exact: stats.totalEngagement ?? 0, iconCn: "text-rose-500",         bgCn: "bg-rose-500/10" },
+const STATS = (stats: ChannelStats, totalWatchTimeHours?: number, trends?: ChannelOverviewProps['trends']) => [
+  { icon: Users,      label: "Subscribers",     value: formatNumber(stats.subscriberCount), exact: stats.subscriberCount ?? 0, iconCn: "text-primary",          bgCn: "bg-primary/10",   trend: undefined },
+  { icon: Eye,        label: "Total Views",      value: formatNumber(stats.viewCount),       exact: stats.viewCount ?? 0,       iconCn: "text-muted-foreground",  bgCn: "bg-muted",        trend: trends?.views },
+  { icon: PlayCircle, label: "Videos",           value: stats.videoCount.toString(),         exact: stats.videoCount ?? 0,      iconCn: "text-primary",          bgCn: "bg-primary/10",   trend: trends?.videos },
+  { icon: Clock,      label: "Watch Time",       value: formatNumber(totalWatchTimeHours ?? 0) + "h", exact: totalWatchTimeHours ?? 0, iconCn: "text-chart-2",         bgCn: "bg-chart-2/10", trend: trends?.watchTime },
 ];
 
-export default function ChannelOverview({ stats }: ChannelOverviewProps) {
+export default function ChannelOverview({ stats, totalWatchTimeHours, trends }: ChannelOverviewProps) {
   return (
     <TooltipProvider>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {STATS(stats).map(({ icon: Icon, label, value, exact, iconCn, bgCn }) => (
+        {STATS(stats, totalWatchTimeHours, trends).map(({ icon: Icon, label, value, exact, iconCn, bgCn, trend }) => (
           <Card key={label} size="sm">
             <CardHeader>
               <div className="flex items-center gap-2">
@@ -48,7 +54,21 @@ export default function ChannelOverview({ stats }: ChannelOverviewProps) {
                 </Tooltip>
                 <CardDescription className="text-xs">{label}</CardDescription>
               </div>
-              <CardTitle className="text-xl tabular-nums">{value}</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl tabular-nums">{value}</CardTitle>
+                {trend !== undefined && (
+                  <div className={`flex items-center gap-0.5 text-xs font-semibold ${
+                    trend > 0 ? "text-chart-1" : trend < 0 ? "text-destructive" : "text-muted-foreground"
+                  }`}>
+                    {trend > 0 ? (
+                      <TrendingUp className="w-3 h-3" />
+                    ) : trend < 0 ? (
+                      <TrendingDown className="w-3 h-3" />
+                    ) : null}
+                    {trend !== 0 && <span>{Math.abs(trend).toFixed(0)}%</span>}
+                  </div>
+                )}
+              </div>
             </CardHeader>
           </Card>
         ))}

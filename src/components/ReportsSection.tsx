@@ -30,7 +30,7 @@ export default function ReportsSection({ reports }: ReportsSectionProps) {
         <CardDescription className="text-xs">Last 12 months performance</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+        <ChartContainer config={chartConfig} className="h-80 w-full">
           <BarChart data={reports} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis

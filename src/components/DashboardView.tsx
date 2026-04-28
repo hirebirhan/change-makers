@@ -70,21 +70,76 @@ export function DashboardView({ initialData }: { initialData: YouTubeApiResponse
     };
   }, [data, dateRange]);
 
-  // Calculate filtered channel stats based on date range
-  const filteredChannelStats = useMemo(() => {
-    // Calculate stats from filtered videos
-    const totalViews = filteredData.videos.reduce((sum, v) => sum + v.viewCount, 0);
-    const totalEngagement = filteredData.videos.reduce((sum, v) => sum + v.likeCount + v.commentCount, 0);
-    const videoCount = filteredData.videos.length;
+  // Calculate filtered channel stats and trends
+  const { filteredChannelStats, trends } = useMemo(() => {
+    const now = new Date();
+    let cutoffDate: Date;
+    let previousCutoffDate: Date;
+
+    switch (dateRange) {
+      case '7days':
+        cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        previousCutoffDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+        break;
+      case '30days':
+        cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        previousCutoffDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+        break;
+      case 'year':
+        cutoffDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        previousCutoffDate = new Date(now.getTime() - 730 * 24 * 60 * 60 * 1000);
+        break;
+      case 'lifetime':
+      default:
+        // No trends for lifetime
+        const totalViews = filteredData.videos.reduce((sum, v) => sum + v.viewCount, 0);
+        const videoCount = filteredData.videos.length;
+        return {
+          filteredChannelStats: {
+            ...data.channel,
+            viewCount: totalViews,
+            videoCount: videoCount,
+          },
+          trends: undefined,
+        };
+    }
+
+    // Current period metrics
+    const currentMetrics = data.dailyMetrics.filter(m => new Date(m.date) >= cutoffDate);
+    const currentViews = currentMetrics.reduce((sum, m) => sum + m.views, 0);
+    const currentWatchTime = currentMetrics.reduce((sum, m) => sum + m.watchTimeHours, 0);
+    const currentVideos = filteredData.videos.length;
+
+    // Previous period metrics
+    const previousMetrics = data.dailyMetrics.filter(m => {
+      const date = new Date(m.date);
+      return date >= previousCutoffDate && date < cutoffDate;
+    });
+    const previousViews = previousMetrics.reduce((sum, m) => sum + m.views, 0);
+    const previousWatchTime = previousMetrics.reduce((sum, m) => sum + m.watchTimeHours, 0);
+    const previousVideos = data.videos.filter(v => {
+      const date = new Date(v.publishedAt);
+      return date >= previousCutoffDate && date < cutoffDate;
+    }).length;
+
+    // Calculate percentage changes
+    const viewsTrend = previousViews > 0 ? ((currentViews - previousViews) / previousViews) * 100 : 0;
+    const watchTimeTrend = previousWatchTime > 0 ? ((currentWatchTime - previousWatchTime) / previousWatchTime) * 100 : 0;
+    const videosTrend = previousVideos > 0 ? ((currentVideos - previousVideos) / previousVideos) * 100 : 0;
 
     return {
-      ...data.channel,
-      viewCount: totalViews,
-      videoCount: videoCount,
-      totalEngagement: totalEngagement,
-      // Keep subscriber count as is (it's a cumulative metric)
+      filteredChannelStats: {
+        ...data.channel,
+        viewCount: currentViews,
+        videoCount: currentVideos,
+      },
+      trends: {
+        views: viewsTrend,
+        watchTime: watchTimeTrend,
+        videos: videosTrend,
+      },
     };
-  }, [filteredData.videos, data.channel]);
+  }, [filteredData.videos, data.channel, data.dailyMetrics, dateRange]);
 
   const shorts = filteredData.videos.filter(v => v.isShort);
   const regularVideos = filteredData.videos.filter(v => !v.isShort);
@@ -113,7 +168,7 @@ export function DashboardView({ initialData }: { initialData: YouTubeApiResponse
           </Tabs>
         </div>
 
-        <ChannelOverview stats={filteredChannelStats} />
+        <ChannelOverview stats={filteredChannelStats} totalWatchTimeHours={totalWatchTimeHours} trends={trends} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2">
@@ -124,7 +179,7 @@ export function DashboardView({ initialData }: { initialData: YouTubeApiResponse
               <CardTitle className="text-base font-semibold">Top Videos</CardTitle>
               <CardDescription className="text-xs">Ranked by total views</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto max-h-[340px]">
+            <CardContent className="flex-1 overflow-y-auto max-h-96">
               <div className="space-y-1">
                 {regularVideos
                   .sort((a, b) => b.viewCount - a.viewCount)

@@ -88,11 +88,11 @@
 --border: oklch(0.93 0.007 106.5);
 --input: oklch(0.93 0.007 106.5);
 --ring: oklch(0.737 0.021 106.9);
---chart-1: oklch(0.35 0.02 240);  /* Dark Blue-Gray (derived from #24282C) */
---chart-2: oklch(0.65 0.15 50);   /* Gold accent (#D99012) */
---chart-3: oklch(0.45 0.01 240);  /* Supporting text tone (#5F6368) */
+--chart-1: oklch(0.63 0.17 48);   /* Brand orange #D89012 - primary accent */
+--chart-2: oklch(0.25 0.02 240);  /* Dark charcoal #252A2E - secondary */
+--chart-3: oklch(0.75 0.01 240);  /* Light gray for supporting data */
 --chart-4: oklch(0.55 0.08 280);  /* Complementary purple */
---chart-5: oklch(0.55 0.15 25);   /* Warning orange */
+--chart-5: oklch(0.70 0.18 40);   /* Lighter orange for warnings */
 --radius: 0;
 --sidebar: oklch(0.988 0.003 106.5);
 --sidebar-foreground: oklch(0.153 0.006 107.1);
@@ -125,11 +125,11 @@
 --border: oklch(1 0 0 / 10%);
 --input: oklch(1 0 0 / 15%);
 --ring: oklch(0.58 0.031 107.3);
---chart-1: oklch(0.55 0.02 240);  /* Lighter version for dark mode */
---chart-2: oklch(0.75 0.18 50);   /* Brighter gold for dark mode */
+--chart-1: oklch(0.73 0.19 48);   /* Brighter brand orange for dark mode */
+--chart-2: oklch(0.45 0.02 240);  /* Lighter charcoal for dark mode */
 --chart-3: oklch(0.65 0.01 240);  /* Lighter supporting tone */
 --chart-4: oklch(0.70 0.10 280);  /* Lighter purple for dark mode */
---chart-5: oklch(0.65 0.18 25);   /* Lighter orange for dark mode */
+--chart-5: oklch(0.75 0.20 40);   /* Brighter orange for dark mode */
 --sidebar: oklch(0.228 0.013 107.4);
 --sidebar-foreground: oklch(0.988 0.003 106.5);
 --sidebar-primary: oklch(0.704 0.14 182.503);
