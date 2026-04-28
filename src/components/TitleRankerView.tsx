@@ -32,11 +32,16 @@ interface TitleAnalysis {
   totalScore: number;
   grade: string;
   dimensions: DimensionScore[];
-  rankedAlternatives: RankedTitle[];
+  rankedAlternatives?: RankedTitle[];
   bestChoice?: {
     title: string;
     score: number;
     whyBest: string;
+  };
+  fixed?: {
+    title: string;
+    score: number;
+    changes: string[];
   };
   meta?: AnalysisMeta;
 }
@@ -86,6 +91,8 @@ export function TitleRankerView({ initialData }: { initialData: YouTubeApiRespon
   const [input, setInput] = useState("");
   const [analysis, setAnalysis] = useState<TitleAnalysis | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [autofixing, setAutofixing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
@@ -106,6 +113,7 @@ export function TitleRankerView({ initialData }: { initialData: YouTubeApiRespon
   async function handleAnalyze() {
     if (!input.trim()) return;
     setAnalyzing(true);
+    setError(null);
     try {
       const res = await fetch("/api/title-ranker", {
         method: "POST",
@@ -113,11 +121,40 @@ export function TitleRankerView({ initialData }: { initialData: YouTubeApiRespon
         body: JSON.stringify({ title: input.trim(), topKeywords, videoData: data.videos }),
       });
       const result = await res.json();
-      setAnalysis(result);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setAnalysis(result);
+      }
     } catch (e) {
       console.error("Analysis failed:", e);
+      setError("Failed to analyze title. Please try again.");
     } finally {
       setAnalyzing(false);
+    }
+  }
+
+  async function handleAutofix() {
+    if (!input.trim()) return;
+    setAutofixing(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/title-ranker", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: input.trim(), topKeywords, videoData: data.videos, autofix: true }),
+      });
+      const result = await res.json();
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setAnalysis(result);
+      }
+    } catch (e) {
+      console.error("Autofix failed:", e);
+      setError("Failed to autofix title. Please try again.");
+    } finally {
+      setAutofixing(false);
     }
   }
 
@@ -147,9 +184,13 @@ export function TitleRankerView({ initialData }: { initialData: YouTubeApiRespon
                 onKeyDown={(e) => e.key === "Enter" && handleAnalyze()}
                 className="flex-1"
               />
-              <Button onClick={handleAnalyze} disabled={!input.trim() || analyzing} className="gap-2 shrink-0">
+              <Button onClick={handleAnalyze} disabled={!input.trim() || analyzing || autofixing} className="gap-2 shrink-0">
                 <Sparkles className="w-4 h-4" />
                 {analyzing ? "Analysing..." : "Analyse"}
+              </Button>
+              <Button onClick={handleAutofix} disabled={!input.trim() || analyzing || autofixing} variant="secondary" className="gap-2 shrink-0">
+                <CheckCircle2 className="w-4 h-4" />
+                {autofixing ? "Fixing..." : "Autofix"}
               </Button>
             </div>
             {topKeywords.length > 0 && (
@@ -165,6 +206,21 @@ export function TitleRankerView({ initialData }: { initialData: YouTubeApiRespon
             )}
           </CardContent>
         </Card>
+
+        {/* Error message */}
+        {error && (
+          <Card className="border-destructive/50 bg-destructive/5">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-destructive">Error</p>
+                  <p className="text-sm text-muted-foreground mt-1">{error}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {analysis && (
           <div className="space-y-4">
@@ -185,59 +241,63 @@ export function TitleRankerView({ initialData }: { initialData: YouTubeApiRespon
                   <CardDescription>Analysed title</CardDescription>
                   <CardTitle className="text-sm leading-snug">&ldquo;{analysis.input}&rdquo;</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {analysis.dimensions.map(d => {
-                      const pct = d.score / d.max;
-                      return (
-                        <Badge key={d.label} variant="secondary" className="gap-1.5">
-                          {pct >= 0.8 ? <CheckCircle2 className="w-3 h-3 text-chart-1" /> : <AlertCircle className="w-3 h-3 text-chart-5" />}
-                          {d.label}
-                        </Badge>
-                      );
-                    })}
-                  </div>
-                </CardContent>
+                {analysis.dimensions && (
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {analysis.dimensions.map(d => {
+                        const pct = d.score / d.max;
+                        return (
+                          <Badge key={d.label} variant="secondary" className="gap-1.5">
+                            {pct >= 0.8 ? <CheckCircle2 className="w-3 h-3 text-chart-1" /> : <AlertCircle className="w-3 h-3 text-chart-5" />}
+                            {d.label}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                )}
               </Card>
             </div>
 
             {/* Dimension breakdown */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <BarChart2 className="w-4 h-4 text-primary" />
-                  <div>
-                    <CardTitle className="text-sm">Dimension Breakdown</CardTitle>
-                    <CardDescription>Score across 7 SEO dimensions</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {analysis.dimensions.map((d) => (
-                  <div key={d.label} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{d.label}</span>
-                      <span className="text-sm tabular-nums font-semibold">
-                        <span className={d.score === d.max ? "text-chart-1" : d.score >= d.max * 0.5 ? "text-chart-5" : "text-destructive"}>{d.score}</span>
-                        <span className="text-muted-foreground font-normal">/{d.max}</span>
-                      </span>
+            {analysis.dimensions && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <BarChart2 className="w-4 h-4 text-primary" />
+                    <div>
+                      <CardTitle className="text-sm">Dimension Breakdown</CardTitle>
+                      <CardDescription>Score across 7 SEO dimensions</CardDescription>
                     </div>
-                    <div className="h-2.5 bg-muted/50 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-700 ${scoreBarColor(d.score, d.max)}`}
-                        style={{ width: `${(d.score / d.max) * 100}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground flex items-center gap-2 leading-relaxed">
-                      {d.score >= d.max * 0.8
-                        ? <CheckCircle2 className="w-3.5 h-3.5 text-chart-1 shrink-0" />
-                        : <AlertCircle className="w-3.5 h-3.5 text-chart-5 shrink-0" />}
-                      {d.feedback}
-                    </p>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {analysis.dimensions.map((d) => (
+                    <div key={d.label} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{d.label}</span>
+                        <span className="text-sm tabular-nums font-semibold">
+                          <span className={d.score === d.max ? "text-chart-1" : d.score >= d.max * 0.5 ? "text-chart-5" : "text-destructive"}>{d.score}</span>
+                          <span className="text-muted-foreground font-normal">/{d.max}</span>
+                        </span>
+                      </div>
+                      <div className="h-2.5 bg-muted/50 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${scoreBarColor(d.score, d.max)}`}
+                          style={{ width: `${(d.score / d.max) * 100}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground flex items-center gap-2 leading-relaxed">
+                        {d.score >= d.max * 0.8
+                          ? <CheckCircle2 className="w-3.5 h-3.5 text-chart-1 shrink-0" />
+                          : <AlertCircle className="w-3.5 h-3.5 text-chart-5 shrink-0" />}
+                        {d.feedback}
+                      </p>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Metadata insights */}
             {analysis.meta && (
@@ -269,14 +329,55 @@ export function TitleRankerView({ initialData }: { initialData: YouTubeApiRespon
               </div>
             )}
 
-            {/* Ranked alternatives */}
-            <div className="space-y-3">
-              <div>
-                <h2 className="text-sm font-semibold">AI's Best Choice</h2>
-                <p className="text-xs text-muted-foreground mt-1">Gemini analyzed all alternatives and picked the highest-scoring title</p>
+            {/* Autofix result */}
+            {analysis.fixed && (
+              <div className="space-y-3">
+                <div>
+                  <h2 className="text-sm font-semibold">Autofixed Title</h2>
+                  <p className="text-xs text-muted-foreground mt-1">AI automatically improved your title based on missing elements</p>
+                </div>
+                
+                <div className="p-4 rounded-xl border-2 border-chart-1 bg-chart-1/5">
+                  <div className="flex items-start gap-3">
+                    <div className="shrink-0 w-10 h-10 rounded-lg bg-chart-1 flex items-center justify-center">
+                      <CheckCircle2 className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <p className="text-sm font-semibold leading-snug flex-1">{analysis.fixed.title}</p>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <CopyBtn text={analysis.fixed.title} />
+                          <Button variant="ghost" size="icon" className="h-8 w-8"
+                            onClick={() => { setInput(analysis.fixed?.title || ""); handleAnalyze(); }}>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs font-semibold text-muted-foreground">Changes made:</p>
+                        {analysis.fixed.changes.map((change, i) => (
+                          <p key={i} className="text-xs text-muted-foreground flex items-start gap-2">
+                            <CheckCircle2 className="w-3 h-3 text-chart-1 shrink-0 mt-0.5" />
+                            {change}
+                          </p>
+                        ))}
+                      </div>
+                      <Badge variant="secondary" className="bg-chart-1/10 text-chart-1 border-chart-1/20 text-xs">
+                        Improved Score: {analysis.fixed.score}/100
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
               </div>
-              
-              {analysis.bestChoice && (
+            )}
+
+            {/* Ranked alternatives */}
+            {analysis.bestChoice && (
+              <div className="space-y-3">
+                <div>
+                  <h2 className="text-sm font-semibold">AI's Best Choice</h2>
+                  <p className="text-xs text-muted-foreground mt-1">Gemini analyzed all alternatives and picked the highest-scoring title</p>
+                </div>
                 <div className="p-4 rounded-xl border-2 border-primary bg-primary/5">
                   <div className="flex items-start gap-3">
                     <div className="shrink-0 w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
@@ -299,43 +400,44 @@ export function TitleRankerView({ initialData }: { initialData: YouTubeApiRespon
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Other alternatives */}
-            <div className="space-y-3">
-              <div>
-                <h2 className="text-sm font-semibold">Other Alternatives</h2>
-                <p className="text-xs text-muted-foreground mt-1">Additional high-scoring titles ranked by predicted SEO performance</p>
-              </div>
-              <div className="space-y-2">
-                {analysis.rankedAlternatives.map((alt, i) => (
-                  <div key={i} className="flex items-start gap-3 p-4 rounded-xl border bg-card hover:shadow-md hover:border-border transition-all group">
-                    {/* Rank badge */}
-                    <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold ${i === 0 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
-                      #{i + 1}
-                    </div>
-                    <div className="flex-1 min-w-0 space-y-1.5">
-                      <div className="flex items-start gap-2">
-                        <p className="text-sm font-semibold leading-snug flex-1">{alt.title}</p>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <CopyBtn text={alt.title} />
-                          <Button variant="ghost" size="icon" className="h-8 w-8"
-                            onClick={() => { setInput(alt.title); handleAnalyze(); }}>
-                            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                          </Button>
-                        </div>
+            {analysis.rankedAlternatives && (
+              <div className="space-y-3">
+                <div>
+                  <h2 className="text-sm font-semibold">Other Alternatives</h2>
+                  <p className="text-xs text-muted-foreground mt-1">Additional high-scoring titles ranked by predicted SEO performance</p>
+                </div>
+                <div className="space-y-2">
+                  {analysis.rankedAlternatives.map((alt, i) => (
+                    <div key={i} className="flex items-start gap-3 p-4 rounded-xl border bg-card hover:shadow-md hover:border-border transition-all group">
+                      <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold ${i === 0 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                        #{i + 1}
                       </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{alt.improvement}</p>
+                      <div className="flex-1 min-w-0 space-y-1.5">
+                        <div className="flex items-start gap-2">
+                          <p className="text-sm font-semibold leading-snug flex-1">{alt.title}</p>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <CopyBtn text={alt.title} />
+                            <Button variant="ghost" size="icon" className="h-8 w-8"
+                              onClick={() => { setInput(alt.title); handleAnalyze(); }}>
+                              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                            </Button>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{alt.improvement}</p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <span className="text-sm font-semibold tabular-nums text-chart-1">{alt.totalScore}</span>
+                        <span className="text-xs text-muted-foreground">/100</span>
+                      </div>
                     </div>
-                    <div className="shrink-0 text-right">
-                      <span className="text-sm font-semibold tabular-nums text-chart-1">{alt.totalScore}</span>
-                      <span className="text-xs text-muted-foreground">/100</span>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 

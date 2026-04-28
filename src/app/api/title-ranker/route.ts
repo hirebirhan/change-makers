@@ -17,6 +17,7 @@ async function callGemini(prompt: string): Promise<string> {
   
   const modelsToTry = workingModel ? [workingModel, ...MODEL_PRIORITY] : MODEL_PRIORITY;
   
+  let lastError: Error | null = null;
   for (const modelName of modelsToTry) {
     try {
       const model = genAI.getGenerativeModel({ model: modelName });
@@ -25,11 +26,26 @@ async function callGemini(prompt: string): Promise<string> {
       workingModel = modelName;
       return text;
     } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
       continue;
     }
   }
   
-  throw new Error("All Gemini models failed");
+  // Convert technical error to user-friendly message
+  const errorMsg = lastError?.message || 'Unknown error';
+  let userMessage = "AI service is temporarily unavailable. Please try again in a few moments.";
+  
+  if (errorMsg.includes("404") || errorMsg.includes("not found") || errorMsg.includes("not supported")) {
+    userMessage = "AI service needs to be updated. Please contact support or try again later.";
+  } else if (errorMsg.includes("API key") || errorMsg.includes("authentication") || errorMsg.includes("401")) {
+    userMessage = "AI service authentication failed. Please check your settings.";
+  } else if (errorMsg.includes("quota") || errorMsg.includes("limit") || errorMsg.includes("429")) {
+    userMessage = "AI service usage limit reached. Please try again later.";
+  } else if (errorMsg.includes("timeout") || errorMsg.includes("network")) {
+    userMessage = "Connection timed out. Please check your internet connection.";
+  }
+  
+  throw new Error(userMessage);
 }
 
 const POWER_WORDS = [
@@ -126,7 +142,7 @@ function analyzeCharacterLimits(title: string): { length: number; mobileTruncate
 
 export async function POST(req: NextRequest) {
   try {
-    const { title, topKeywords = [], videoData = [] } = await req.json();
+    const { title, topKeywords = [], videoData = [], autofix = false } = await req.json();
     
     if (!title || typeof title !== "string") {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
@@ -136,7 +152,46 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "GEMINI_API_KEY not configured" }, { status: 400 });
     }
 
-    const prompt = `You are a YouTube SEO expert. Analyze this video title and provide detailed scoring.
+    let prompt = '';
+    
+    if (autofix) {
+      prompt = `You are a YouTube SEO expert. Your task is to improve this title following EXACT rules.
+
+Original Title: "${title}"
+Channel's top keywords: ${topKeywords.slice(0, 8).join(", ")}
+
+You MUST follow these rules EXACTLY:
+
+1. CHARACTER LENGTH: Make the title between 45-60 characters. Count carefully.
+
+2. KEYWORD PLACEMENT: If the title doesn't have one of these keywords [${topKeywords.slice(0, 3).join(", ")}] in the first 3 words, add it naturally at the start.
+
+3. NUMBERS: If there's no number in the title, add ONE number (like 5, 10, 7, 3) that makes sense.
+
+4. POWER WORDS: Add 1-2 of these words if missing: Complete, Ultimate, Best, Proven, Easy, Fast, Simple, Master, Guide, Essential.
+
+5. STRUCTURE: Add ONE separator (: or |) OR make it a question (?) if it doesn't have one.
+
+6. KEEP THE MEANING: Don't change what the video is about. Only improve the wording.
+
+7. BE NATURAL: The title must sound natural and readable, not keyword-stuffed.
+
+8. EMOJI: Only add ONE emoji at the very start if it fits the topic. Skip if it's professional/technical content.
+
+Return ONLY this JSON format (no markdown, no code blocks, no extra text):
+{
+  "fixed": {
+    "title": "Your improved title here",
+    "changes": [
+      "Changed length from X to Y characters",
+      "Added keyword 'example' at start",
+      "Added number '5'",
+      "Added separator ':'"
+    ]
+  }
+}`;
+    } else {
+      prompt = `You are a YouTube SEO expert. Analyze this video title and provide detailed scoring.
 
 Title: "${title}"
 Channel's top keywords: ${topKeywords.slice(0, 8).join(", ")}
@@ -182,11 +237,171 @@ Return ONLY valid JSON (no markdown, no code blocks):
     "score": 88,
     "whyBest": "This title scores highest because it combines optimal character length, strong keyword placement, power words, and clear structure."
   }
+    }
 }`;
+    }
 
     const response = await callGemini(prompt);
     const cleaned = response.replace(/```json\n?|\n?```/g, '').trim();
     const aiResult = JSON.parse(cleaned);
+
+    if (autofix) {
+      const response = await callGemini(prompt);
+      const cleaned = response.replace(/```json\n?|\n?```/g, '').trim();
+      const aiResult = JSON.parse(cleaned);
+
+      const fixedTitle = aiResult.fixed.title;
+      const lower = fixedTitle.toLowerCase();
+      const words = lower.split(/\s+/).filter((w: string) => w.length > 0);
+
+      // Calculate dimensions using helper functions for consistency
+      const dimensions = [
+        {
+          label: "Character limits",
+          score: analyzeCharacterLimits(fixedTitle).score,
+          max: 20,
+          feedback: analyzeCharacterLimits(fixedTitle).feedback
+        },
+        {
+          label: "Keyword relevance",
+          score: (() => {
+            const top3 = topKeywords.slice(0, 3);
+            const inFirst3 = top3.some((kw: string) => words.slice(0, 3).some((w: string) => w.includes(kw)));
+            const hasAny = top3.some((kw: string) => lower.includes(kw));
+            const hasMultiple = top3.filter((kw: string) => lower.includes(kw)).length;
+            
+            if (inFirst3 && hasMultiple >= 2) return 20;
+            if (inFirst3) return 16;
+            if (hasMultiple >= 2) return 12;
+            if (hasAny) return 8;
+            return 0;
+          })(),
+          max: 20,
+          feedback: (() => {
+            const top3 = topKeywords.slice(0, 3);
+            const inFirst3 = top3.some((kw: string) => words.slice(0, 3).some((w: string) => w.includes(kw)));
+            const hasMultiple = top3.filter((kw: string) => lower.includes(kw)).length;
+            
+            if (inFirst3 && hasMultiple >= 2) return `Multiple top keywords in first 3 words — excellent`;
+            if (inFirst3) return `Top keyword in first 3 words — good`;
+            if (hasMultiple >= 2) return `Has ${hasMultiple} top keywords, but not at start`;
+            if (top3.some((kw: string) => lower.includes(kw))) return `Keyword present but not prominent`;
+            return `No channel keywords detected`;
+          })()
+        },
+        {
+          label: "Power words & numbers",
+          score: (() => {
+            const hasNumber = /\d/.test(fixedTitle);
+            const powerCount = POWER_WORDS.filter(w => lower.includes(w)).length;
+            return (hasNumber ? 8 : 0) + Math.min(powerCount * 4, 12);
+          })(),
+          max: 20,
+          feedback: (() => {
+            const hasNumber = /\d/.test(fixedTitle);
+            const powerCount = POWER_WORDS.filter(w => lower.includes(w)).length;
+            
+            if (hasNumber && powerCount >= 2) return `Number + ${powerCount} power words — strong CTR signal`;
+            if (hasNumber && powerCount === 1) return `Number + power word — good combination`;
+            if (powerCount >= 2) return `${powerCount} power words — add a number for impact`;
+            if (hasNumber) return `Has a number — add power words for CTR`;
+            if (powerCount === 1) return `Has 1 power word — add a number`;
+            return `No power words or numbers — add both`;
+          })()
+        },
+        {
+          label: "Structure & clarity",
+          score: (() => {
+            const hasSeparator = /[|:\-–—]/.test(fixedTitle);
+            const hasQuestion = /\?/.test(fixedTitle);
+            const wordCount = words.length;
+            
+            let score = 0;
+            if (hasSeparator) score += 10;
+            if (hasQuestion) score += 8;
+            if (wordCount >= 5 && wordCount <= 12) score += 7;
+            else if (wordCount >= 3 && wordCount <= 15) score += 4;
+            
+            return score;
+          })(),
+          max: 25,
+          feedback: (() => {
+            const hasSeparator = /[|:\-–—]/.test(fixedTitle);
+            const hasQuestion = /\?/.test(fixedTitle);
+            const wordCount = words.length;
+            
+            const parts = [];
+            if (hasSeparator) parts.push("separator");
+            if (hasQuestion) parts.push("question");
+            if (wordCount >= 5 && wordCount <= 12) parts.push("ideal word count");
+            
+            if (parts.length >= 2) return `Has ${parts.join(" + ")} — excellent structure`;
+            if (parts.length === 1) return `Has ${parts[0]} — good structure`;
+            return `Consider adding separator or question format`;
+          })()
+        },
+        {
+          label: "Search intent",
+          score: (() => {
+            const { intent, confidence } = detectSearchIntent(fixedTitle);
+            return intent === "mixed" ? 10 : Math.round(confidence * 10);
+          })(),
+          max: 10,
+          feedback: (() => {
+            const { intent, confidence } = detectSearchIntent(fixedTitle);
+            const pct = Math.round(confidence * 100);
+            if (intent === "informational") return `Informational intent (${pct}% confident) — good for educational content`;
+            if (intent === "transactional") return `Transactional intent (${pct}% confident) — good for reviews/comparisons`;
+            return `Mixed intent — could be clearer for search`;
+          })()
+        },
+        {
+          label: "Emoji usage",
+          score: analyzeEmoji(fixedTitle).score,
+          max: 10,
+          feedback: analyzeEmoji(fixedTitle).feedback
+        },
+        {
+          label: "Sentiment tone",
+          score: (() => {
+            const { sentiment, confidence } = detectSentiment(fixedTitle);
+            if (sentiment === "exciting") return 10;
+            if (sentiment === "positive") return Math.round(6 + confidence * 4);
+            if (sentiment === "negative") return 3;
+            return 5;
+          })(),
+          max: 10,
+          feedback: (() => {
+            const { sentiment } = detectSentiment(fixedTitle);
+            if (sentiment === "exciting") return "Exciting tone — drives curiosity and clicks";
+            if (sentiment === "positive") return "Positive tone — builds trust";
+            if (sentiment === "negative") return "Negative tone — use sparingly for controversy";
+            return "Neutral tone — consider adding emotional hook";
+          })()
+        }
+      ];
+
+      const totalScore = Math.min(dimensions.reduce((s, d) => s + d.score, 0), 100);
+      const grade = totalScore >= 90 ? "A+" : totalScore >= 80 ? "A" : totalScore >= 70 ? "B" : totalScore >= 60 ? "C" : totalScore >= 50 ? "D" : "F";
+
+      return NextResponse.json({
+        input: title,
+        totalScore,
+        grade,
+        dimensions,
+        fixed: {
+          title: fixedTitle,
+          score: totalScore,
+          changes: aiResult.fixed.changes
+        },
+        meta: {
+          searchIntent: detectSearchIntent(fixedTitle),
+          sentiment: detectSentiment(fixedTitle),
+          emoji: analyzeEmoji(fixedTitle),
+          characterLimits: analyzeCharacterLimits(fixedTitle)
+        }
+      });
+    }
 
     // Validate and cap dimension scores
     const validatedDimensions = aiResult.dimensions.map((d: { label: string; score: number; max: number; feedback: string }) => ({
