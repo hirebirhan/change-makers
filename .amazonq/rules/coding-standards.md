@@ -183,6 +183,13 @@ export function FeatureView({ initialData }: Props) {
 - Never use React hooks (useState, useEffect, etc.) in pages
 - Pass fetched data to client view components as props
 
+### Client Components Must Never Fetch Initial Data
+- **CRITICAL**: Client components should NEVER fetch data on mount or in useEffect for initial load
+- Client components should ONLY receive data via props from server components
+- Client components can only fetch data for refresh/update operations triggered by user actions
+- Never use fetch, axios, or any HTTP client in client components except for user-triggered refreshes
+- API routes should only be called from server components or for client-side refresh operations
+
 ### Pattern:
 ```tsx
 // ✅ CORRECT: src/app/feature/page.tsx (Server Component)
