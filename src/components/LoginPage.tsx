@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
+import { LogIn } from "lucide-react";
+
+const GOOGLE_OAUTH_ENABLED = process.env.NEXT_PUBLIC_ENABLE_GOOGLE_OAUTH === "true";
 
 const YT_LOGO = (
   <svg className="size-5 text-white" viewBox="0 0 24 24" fill="currentColor">
@@ -14,20 +17,20 @@ const YT_LOGO = (
   </svg>
 );
 
-export function LoginPage() {
+export function LoginPage({ errorMessage }: { errorMessage?: string }) {
   const { login } = useAuth();
   const [username, setUsername] = useState(process.env.NODE_ENV === "development" ? "admin" : "");
   const [password, setPassword] = useState(process.env.NODE_ENV === "development" ? "changem@kers2025" : "");
-  const [error, setError] = useState("");
+  const [legacyError, setLegacyError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleLegacySubmit(event: React.FormEvent) {
+    event.preventDefault();
     setLoading(true);
-    setError("");
+    setLegacyError("");
     const success = await login(username, password);
     if (!success) {
-      setError("Invalid username or password");
+      setLegacyError("Invalid username or password");
       setLoading(false);
     }
   }
@@ -73,14 +76,35 @@ export function LoginPage() {
               <CardTitle>Welcome back</CardTitle>
               <CardDescription>Sign in to your analytics dashboard</CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
+            <CardContent className="space-y-4">
+              {GOOGLE_OAUTH_ENABLED && errorMessage && (
+                <Badge variant="destructive" className="w-full justify-start h-auto whitespace-normal py-1.5 px-3 text-xs">
+                  {errorMessage}
+                </Badge>
+              )}
+              {GOOGLE_OAUTH_ENABLED && (
+                <>
+                  <Badge variant="secondary" className="w-full justify-start h-auto py-1.5 px-3 text-xs">
+                    Public API-key dashboards remain available without Google sign-in.
+                  </Badge>
+                  <Button className="w-full" size="lg" render={<a href="/auth/google/start" />}>
+                    <LogIn className="size-4" />
+                    Sign in with Google
+                  </Button>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span className="h-px flex-1 bg-border" />
+                    Legacy access
+                    <span className="h-px flex-1 bg-border" />
+                  </div>
+                </>
+              )}
+              <form onSubmit={handleLegacySubmit} className="space-y-3">
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium">Username</label>
                   <Input
                     type="text"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={(event) => setUsername(event.target.value)}
                     placeholder="admin"
                     required
                   />
@@ -90,18 +114,18 @@ export function LoginPage() {
                   <Input
                     type="password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="Password"
                     required
                   />
                 </div>
-                {error && (
+                {legacyError && (
                   <Badge variant="destructive" className="w-full justify-start h-auto py-1.5 px-3 text-xs">
-                    ⚠ {error}
+                    {legacyError}
                   </Badge>
                 )}
-                <Button type="submit" className="w-full" size="lg" disabled={loading}>
-                  {loading ? "Signing in…" : "Sign in"}
+                <Button type="submit" variant="outline" className="w-full" size="lg" disabled={loading}>
+                  {loading ? "Signing in..." : "Use legacy login"}
                 </Button>
               </form>
             </CardContent>

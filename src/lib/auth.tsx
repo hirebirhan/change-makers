@@ -3,46 +3,118 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
-const CREDENTIALS = { username: "admin", password: "changem@kers2025" };
-
 interface AuthCtx {
   isAuthenticated: boolean;
+  loading: boolean;
+  authMode: "google" | "legacy" | null;
+  user: { id: string; email: string; name: string; avatarUrl: string | null } | null;
+  youtube: {
+    connected: boolean;
+    revoked: boolean;
+    googleAccountEmail: string | null;
+    youtubeChannelId: string | null;
+    grantedScopes: string[];
+    tokenExpiry: string | null;
+  };
   login: (username: string, password: string) => Promise<boolean>;
+  googleLogin: () => void;
   logout: () => Promise<void>;
+  connectYouTube: (revenue?: boolean) => void;
+  disconnectYouTube: () => Promise<void>;
+  refreshMe: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthCtx | null>(null);
+const emptyYouTube = {
+  connected: false,
+  revoked: false,
+  googleAccountEmail: null,
+  youtubeChannelId: null,
+  grantedScopes: [],
+  tokenExpiry: null,
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [authMode, setAuthMode] = useState<AuthCtx["authMode"]>(null);
+  const [user, setUser] = useState<AuthCtx["user"]>(null);
+  const [youtube, setYouTube] = useState<AuthCtx["youtube"]>(emptyYouTube);
   const router = useRouter();
 
   useEffect(() => {
-    fetch("/api/auth/check")
-      .then(res => res.json())
-      .then(data => setIsAuthenticated(data.authenticated))
-      .catch(() => setIsAuthenticated(false));
+    refreshMe();
   }, []);
 
-  async function login(username: string, password: string) {
-    if (username === CREDENTIALS.username && password === CREDENTIALS.password) {
-      const res = await fetch("/api/auth/login", { method: "POST" });
-      if (res.ok) {
-        setIsAuthenticated(true);
-        router.push("/");
-        return true;
-      }
+  async function refreshMe() {
+    setLoading(true);
+    try {
+      const res = await fetch("/auth/me", { cache: "no-store" });
+      const data = await res.json();
+      setUser(data.user ?? null);
+      setAuthMode(data.authMode ?? null);
+      setYouTube(data.youtube ?? emptyYouTube);
+    } catch {
+      setUser(null);
+      setAuthMode(null);
+      setYouTube(emptyYouTube);
+    } finally {
+      setLoading(false);
     }
-    return false;
+  }
+
+  async function login(username: string, password: string) {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    if (!res.ok) return false;
+    await refreshMe();
+    router.push("/");
+    router.refresh();
+    return true;
+  }
+
+  function googleLogin() {
+    window.location.href = "/auth/google/start";
+  }
+
+  function connectYouTube(revenue = false) {
+    window.location.href = revenue ? "/auth/youtube/start?revenue=1" : "/auth/youtube/start";
   }
 
   async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    setIsAuthenticated(false);
-    router.push("/login");
+    await fetch("/auth/logout", { method: "POST" });
+    setUser(null);
+    setAuthMode(null);
+    setYouTube(emptyYouTube);
+    router.refresh();
   }
 
-  return <AuthContext.Provider value={{ isAuthenticated, login, logout }}>{children}</AuthContext.Provider>;
+  async function disconnectYouTube() {
+    await fetch("/auth/youtube/disconnect", { method: "POST" });
+    await refreshMe();
+  }
+
+  return (
+    <AuthContext.Provider
+      value={{
+        isAuthenticated: Boolean(user),
+        loading,
+        authMode,
+        user,
+        youtube,
+        login,
+        googleLogin,
+        logout,
+        connectYouTube,
+        disconnectYouTube,
+        refreshMe,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

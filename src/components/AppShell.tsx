@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LogOut, LayoutDashboard, PlaySquare, Sparkles, RefreshCw, MessageCircle, Brain, Type, TrendingUp, Lightbulb, Target, CalendarClock } from "lucide-react";
+import { LogIn, LogOut, Link2, Unplug, LayoutDashboard, PlaySquare, Sparkles, RefreshCw, MessageCircle, Brain, Type, TrendingUp, Lightbulb, Target, CalendarClock } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,8 @@ const NAV = [
   { href: "/ai", label: "AI Studio", icon: Brain },
 ];
 
+const GOOGLE_OAUTH_ENABLED = process.env.NEXT_PUBLIC_ENABLE_GOOGLE_OAUTH === "true";
+
 const YT_LOGO = (
   <svg className="size-4 text-white" viewBox="0 0 24 24" fill="currentColor">
     <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
@@ -44,8 +46,9 @@ interface AppShellProps {
 }
 
 export function AppShell({ children, channel, onRefresh, refreshing, lastUpdated }: AppShellProps) {
-  const { logout } = useAuth();
+  const { isAuthenticated, user, youtube, authMode, googleLogin, logout, connectYouTube, disconnectYouTube } = useAuth();
   const pathname = usePathname();
+  const showGoogleAccountControls = GOOGLE_OAUTH_ENABLED && authMode === "google";
 
   return (
     <SidebarProvider className="min-h-screen">
@@ -149,6 +152,40 @@ export function AppShell({ children, channel, onRefresh, refreshing, lastUpdated
               )}
               <ThemeToggle />
               <Separator orientation="vertical" className="h-5 mx-1" />
+              {isAuthenticated ? (
+                <>
+                  {showGoogleAccountControls && (
+                    <>
+                      <BadgeLikeStatus connected={youtube.connected} revoked={youtube.revoked} />
+                      {youtube.connected ? (
+                        <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={disconnectYouTube}>
+                          <Unplug className="size-4" />
+                          Disconnect
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" className="hidden sm:inline-flex" onClick={() => connectYouTube()}>
+                          <Link2 className="size-4" />
+                          {youtube.revoked ? "Reconnect" : "Connect YouTube"}
+                        </Button>
+                      )}
+                    </>
+                  )}
+                  {showGoogleAccountControls && user?.avatarUrl ? (
+                    <Image src={user.avatarUrl} alt={user.name} width={28} height={28} className="rounded-full object-cover ring-2 ring-border" />
+                  ) : null}
+                </>
+              ) : GOOGLE_OAUTH_ENABLED ? (
+                <Button variant="outline" size="sm" onClick={googleLogin}>
+                  <LogIn className="size-4" />
+                  Sign in
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" render={<Link href="/login" />}>
+                  <LogIn className="size-4" />
+                  Sign in
+                </Button>
+              )}
+              <Separator orientation="vertical" className="h-5 mx-1" />
               {channel && (
                 <>
                   {channel.profileImageUrl ? (
@@ -181,14 +218,25 @@ export function AppShell({ children, channel, onRefresh, refreshing, lastUpdated
                   <Separator orientation="vertical" className="h-5 mx-1" />
                 </>
               )}
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={logout}>
-                <LogOut className="w-4 h-4" />
-              </Button>
+              {isAuthenticated && (
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={logout}>
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              )}
             </div>
           </nav>
 
         {children}
       </SidebarInset>
     </SidebarProvider>
+  );
+}
+
+function BadgeLikeStatus({ connected, revoked }: { connected: boolean; revoked: boolean }) {
+  const label = connected ? "YouTube connected" : revoked ? "Reconnect needed" : "Public mode";
+  return (
+    <span className="hidden md:inline-flex h-8 items-center rounded-full border border-border px-3 text-xs font-medium text-muted-foreground">
+      {label}
+    </span>
   );
 }

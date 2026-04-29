@@ -62,13 +62,22 @@ A comprehensive YouTube channel analytics and management platform built with Nex
 
 ## Tech Stack
 
-- **Framework**: Next.js 15 (App Router)
+- **Framework**: Next.js App Router
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **UI Components**: shadcn/ui
 - **API Integration**: YouTube Data API v3
 - **AI**: Google Gemini API
-- **Authentication**: Cookie-based auth
+- **Authentication**: Google OAuth 2.0 Authorization Code Flow with HttpOnly sessions
+
+## Architecture Decision
+
+This project remains a single Next.js app rather than a monorepo. The existing app already uses App Router pages and route handlers, and the new OAuth requirements can be handled securely server-side with Node route handlers, HttpOnly cookies, encrypted token storage, and API proxy routes. A separate backend is still a good future option for background sync jobs, queue workers, multi-tenant analytics warehousing, or cross-domain deployments, but it would add migration risk right now without improving the current security boundary.
+
+The app now has two YouTube data-access modes:
+
+- **Public mode**: existing API-key features keep using `YOUTUBE_API_KEY` and `YOUTUBE_CHANNEL_ID`. These routes remain separate and do not require Google sign-in.
+- **Authorized mode**: Google sign-in identifies the user, then “Connect YouTube” requests YouTube scopes incrementally. Google access and refresh tokens never go to the browser.
 
 ## Getting Started
 
@@ -101,6 +110,28 @@ Create a `.env.local` file in the root directory:
 YOUTUBE_API_KEY=your_youtube_api_key
 YOUTUBE_CHANNEL_ID=your_channel_id
 GEMINI_API_KEY=your_gemini_api_key
+
+APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+DATABASE_URL=file:.data/auth-db.json
+
+GOOGLE_CLIENT_ID=your_google_oauth_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
+GOOGLE_LOGIN_REDIRECT_URI=http://localhost:3000/auth/google/callback
+GOOGLE_YOUTUBE_REDIRECT_URI=http://localhost:3000/auth/youtube/callback
+GOOGLE_LOGIN_SCOPES=openid email profile
+GOOGLE_YOUTUBE_SCOPES=https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly
+GOOGLE_REVENUE_SCOPE=https://www.googleapis.com/auth/yt-analytics-monetary.readonly
+SESSION_SECRET=replace_with_at_least_32_random_characters
+TOKEN_ENCRYPTION_KEY=replace_with_32_random_bytes_base64
+LEGACY_ADMIN_USERNAME=admin
+LEGACY_ADMIN_PASSWORD=replace_with_a_strong_legacy_password
+```
+
+Generate a local token encryption key with:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
 
 4. Run the development server:
@@ -138,6 +169,56 @@ src/
 │   └── analytics-utils.ts # Analytics calculations
 └── types/                 # TypeScript type definitions
 ```
+
+## OAuth Endpoints
+
+- `GET /auth/google/start`
+- `GET /auth/google/callback`
+- `POST /auth/logout`
+- `GET /auth/me`
+- `GET /auth/youtube/start`
+- `GET /auth/youtube/callback`
+- `POST /auth/youtube/disconnect`
+- `GET /api/youtube/me/channels`
+- `GET /api/youtube/me/analytics/overview`
+- `GET /api/youtube/me/analytics/videos`
+- `GET /api/youtube/me/analytics/revenue`
+
+No endpoint returns Google access tokens, refresh tokens, authorization codes, or client secrets.
+
+## Google Cloud Console Setup
+
+1. Create or select a Google Cloud project.
+2. Enable **YouTube Data API v3**.
+3. Enable **YouTube Analytics API**.
+4. Configure the OAuth consent screen with app name, support email, developer contact, and authorized domains.
+5. Create an OAuth 2.0 Client ID for a web application.
+6. Add local redirect URIs:
+   - `http://localhost:3000/auth/google/callback`
+   - `http://localhost:3000/auth/youtube/callback`
+7. Add matching production redirect URIs for your deployed domain.
+8. Add scopes:
+   - `openid`
+   - `email`
+   - `profile`
+   - `https://www.googleapis.com/auth/youtube.readonly`
+   - `https://www.googleapis.com/auth/yt-analytics.readonly`
+   - `https://www.googleapis.com/auth/yt-analytics-monetary.readonly` only for revenue features
+9. Public production apps using sensitive YouTube scopes may require Google verification before broad release.
+
+## OAuth Storage
+
+The included local development repository stores OAuth data in `DATABASE_URL=file:.data/auth-db.json` with encrypted tokens. Use `docs/oauth-schema.sql` as the production database shape when moving to Postgres/MySQL or another managed database. Required tables are `users`, `google_connections`, `oauth_states`, and future-ready `analytics_snapshots`.
+
+## Security Checklist
+
+- Keep `GOOGLE_CLIENT_SECRET`, `SESSION_SECRET`, and `TOKEN_ENCRYPTION_KEY` server-only and out of `NEXT_PUBLIC_*`.
+- Use HTTPS in production so HttpOnly secure cookies are enforced.
+- Rotate `TOKEN_ENCRYPTION_KEY` with a planned re-encryption process.
+- Use a managed database in production instead of the local JSON development store.
+- Keep OAuth redirect URIs exact and environment-specific.
+- Do not log tokens, authorization codes, client secrets, or OAuth state values.
+- Monitor refresh failures; `invalid_grant` marks the YouTube connection revoked and requires reconnect.
 
 ## Future Features
 
