@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { TrendingUp, Eye, Heart, MessageCircle, Zap } from "lucide-react";
+import { Eye, Heart, MessageCircle, Zap } from "lucide-react";
 import type { VideoPerformance } from "@/lib/analytics-utils";
 
 interface PerformanceStatsProps {
@@ -19,13 +19,12 @@ function formatNumber(n: number) {
 export function PerformanceStats({ performance }: PerformanceStatsProps) {
   const allVideos = [...performance.best, ...performance.worst, ...performance.recent];
   const uniqueVideos = Array.from(new Map(allVideos.map(p => [p.video.id, p])).values());
+  const videoCount = uniqueVideos.length || 1;
   
-  const avgViewsPerDay = uniqueVideos.reduce((sum, p) => sum + p.viewsPerDay, 0) / uniqueVideos.length;
+  const avgViewsPerDay = uniqueVideos.reduce((sum, p) => sum + p.viewsPerDay, 0) / videoCount;
   const totalViews = uniqueVideos.reduce((sum, p) => sum + p.video.viewCount, 0);
-  const avgLikeRatio = uniqueVideos.reduce((sum, p) => sum + p.likeRatio, 0) / uniqueVideos.length;
-  const avgCommentRatio = uniqueVideos.reduce((sum, p) => sum + p.commentRatio, 0) / uniqueVideos.length;
-  const topPerformer = performance.best[0];
-
+  const avgLikeRatio = uniqueVideos.reduce((sum, p) => sum + p.likeRatio, 0) / videoCount;
+  const avgCommentRatio = uniqueVideos.reduce((sum, p) => sum + p.commentRatio, 0) / videoCount;
   const stats = [
     {
       label: "Avg Views/Day",
@@ -75,25 +74,6 @@ export function PerformanceStats({ performance }: PerformanceStatsProps) {
         ))}
       </div>
 
-      {topPerformer && (
-        <Card className="border-chart-1/20 bg-chart-1/5">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-chart-1 flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <CardDescription className="text-xs">Top Performer</CardDescription>
-                <CardTitle className="text-sm leading-tight line-clamp-1">{topPerformer.video.title}</CardTitle>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-xl font-semibold tabular-nums text-chart-1">{formatNumber(Math.round(topPerformer.viewsPerDay))}</p>
-                <p className="text-xs text-muted-foreground">views/day</p>
-              </div>
-            </div>
-          </CardHeader>
-        </Card>
-      )}
     </div>
   );
 }

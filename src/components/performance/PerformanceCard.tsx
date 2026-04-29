@@ -1,8 +1,9 @@
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Eye, Heart, MessageCircle, Zap } from "lucide-react";
+import { Eye, Heart, MessageCircle, Zap, CalendarDays, Gauge } from "lucide-react";
 import type { VideoPerformance } from "@/lib/analytics-utils";
+import { cn } from "@/lib/utils";
 
 interface PerformanceCardProps {
   perf: VideoPerformance;
@@ -28,78 +29,94 @@ function formatDuration(duration: string) {
 
 export function PerformanceCard({ perf, rank, variant }: PerformanceCardProps) {
   const suggestions = getPerformanceSuggestions(perf);
-
-  const rankColors = {
-    best: "bg-chart-1 text-white",
-    recent: "bg-chart-2 text-white",
-    worst: "bg-chart-5/10 text-chart-5"
-  };
+  const tone = VARIANT_TONE[variant];
+  const engagementRate = perf.likeRatio + perf.commentRatio;
+  const publishedDate = new Date(perf.video.publishedAt).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 
   return (
-    <Card className="overflow-hidden hover:bg-muted/30 transition-colors">
-      <div className="flex gap-2 p-2">
-        <div className="relative w-28 h-16 rounded-md overflow-hidden shrink-0 bg-muted">
+    <Card className={cn("overflow-hidden transition-colors hover:border-primary/30", tone.card)}>
+      <div className="grid gap-3 p-3 sm:grid-cols-[184px_1fr]">
+        <a
+          href={`https://www.youtube.com/watch?v=${perf.video.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group relative block aspect-video overflow-hidden rounded-lg bg-muted"
+        >
           <Image
             src={perf.video.thumbnailUrl}
             alt={perf.video.title}
             fill
-            className="object-cover"
-            sizes="112px"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            sizes="(min-width: 640px) 184px, 100vw"
           />
-          <div className="absolute bottom-0.5 right-0.5 bg-black/80 text-white text-xs px-1 rounded">
+          <div className="absolute bottom-2 right-2 rounded bg-black/80 px-1.5 py-0.5 text-xs font-medium text-white">
             {formatDuration(perf.video.duration)}
           </div>
-          <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full ${rankColors[variant]} flex items-center justify-center text-xs font-semibold`}>
-            {rank}
+          <div className={cn("absolute left-2 top-2 flex h-7 min-w-7 items-center justify-center rounded-full px-2 text-xs font-semibold", tone.rank)}>
+            #{rank}
           </div>
-        </div>
+        </a>
 
-        <div className="flex-1 min-w-0 space-y-1.5">
-          <div>
+        <div className="flex min-w-0 flex-col justify-between gap-3">
+          <div className="space-y-2">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {variant === "best" && rank === 1 && (
+                  <Badge variant="outline" className="h-6 rounded-md border-chart-1/20 bg-chart-1/10 px-2 text-xs text-chart-1">
+                    Top performer
+                  </Badge>
+                )}
+                {variant === "recent" && (
+                  <Badge variant="outline" className="h-6 rounded-md border-chart-2/20 bg-chart-2/10 px-2 text-xs text-chart-2">
+                    Recent
+                  </Badge>
+                )}
+              </div>
+              <span className="hidden shrink-0 items-center gap-1 text-xs text-muted-foreground sm:flex">
+                <CalendarDays className="size-3.5" />
+                {publishedDate}
+              </span>
+            </div>
             <a
               href={`https://www.youtube.com/watch?v=${perf.video.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-semibold text-xs leading-tight line-clamp-2 hover:text-primary transition-colors"
+              className="line-clamp-2 text-sm font-semibold leading-snug transition-colors hover:text-primary"
             >
               {perf.video.title}
             </a>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {new Date(perf.video.publishedAt).toLocaleDateString()} · {perf.daysOld}d ago
+            <p className="flex items-center gap-1 text-xs text-muted-foreground sm:hidden">
+              <CalendarDays className="size-3.5" />
+              {publishedDate}
             </p>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-0.5 text-xs">
-              <Zap className={`w-3 h-3 ${variant === "best" ? "text-chart-1" : variant === "recent" ? "text-chart-2" : "text-muted-foreground"}`} />
-              <span className="font-semibold">{formatNumber(Math.round(perf.viewsPerDay))}</span>
-              <span className="text-muted-foreground">/day</span>
-            </div>
-            <div className="flex items-center gap-0.5 text-xs text-muted-foreground">
-              <Eye className="w-3 h-3" />
-              <span>{formatNumber(perf.video.viewCount)}</span>
-            </div>
-            <div className="flex items-center gap-0.5 text-xs text-muted-foreground">
-              <Heart className="w-3 h-3" />
-              <span>{formatNumber(perf.video.likeCount)}</span>
-              <span>({perf.likeRatio.toFixed(1)}%)</span>
-            </div>
-            <div className="flex items-center gap-0.5 text-xs text-muted-foreground">
-              <MessageCircle className="w-3 h-3" />
-              <span>{formatNumber(perf.video.commentCount)}</span>
-              <span>({perf.commentRatio.toFixed(1)}%)</span>
-            </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <Metric icon={Zap} label="Views/day" value={formatNumber(Math.round(perf.viewsPerDay))} emphasis={tone.metric} />
+            <Metric icon={Eye} label="Views" value={formatNumber(perf.video.viewCount)} />
+            <Metric icon={Gauge} label="Engage" value={`${engagementRate.toFixed(1)}%`} />
+            <Metric icon={CalendarDays} label="Age" value={`${perf.daysOld}d`} />
           </div>
 
-          {variant === "worst" && suggestions.length > 0 && (
-            <div className="flex items-center gap-1 flex-wrap">
-              {suggestions.map((suggestion) => (
-                <Badge key={suggestion} variant="outline" className="text-xs h-5 px-1.5 bg-chart-5/10 text-chart-5 border-chart-5/20">
-                  {suggestion}
-                </Badge>
-              ))}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <CompactMetric icon={Heart} value={formatNumber(perf.video.likeCount)} label={`${perf.likeRatio.toFixed(1)}%`} />
+              <CompactMetric icon={MessageCircle} value={formatNumber(perf.video.commentCount)} label={`${perf.commentRatio.toFixed(1)}%`} />
             </div>
-          )}
+            {variant === "worst" && suggestions.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1">
+                {suggestions.map((suggestion) => (
+                  <Badge key={suggestion} variant="outline" className="h-6 rounded-md border-chart-5/20 bg-chart-5/10 px-2 text-xs text-chart-5">
+                    {suggestion}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </Card>
@@ -113,3 +130,57 @@ function getPerformanceSuggestions(perf: VideoPerformance) {
   if (perf.viewsPerDay < 10) suggestions.push("Low visibility");
   return suggestions;
 }
+
+function Metric({
+  icon: Icon,
+  label,
+  value,
+  emphasis,
+}: {
+  icon: typeof Zap;
+  label: string;
+  value: string;
+  emphasis?: string;
+}) {
+  return (
+    <div className="rounded-lg border bg-background/70 p-2">
+      <div className="mb-1 flex items-center gap-1 text-xs text-muted-foreground">
+        <Icon className="size-3.5" />
+        {label}
+      </div>
+      <div className={cn("text-sm font-semibold tabular-nums", emphasis)}>{value}</div>
+    </div>
+  );
+}
+
+function CompactMetric({ icon: Icon, value, label }: { icon: typeof Heart; value: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+      <Icon className="size-3.5" />
+      <span className="font-medium text-foreground">{value}</span>
+      <span>{label}</span>
+    </span>
+  );
+}
+
+const VARIANT_TONE = {
+  best: {
+    card: "border-chart-1/20",
+    rank: "bg-chart-1 text-white",
+    metric: "text-chart-1",
+  },
+  recent: {
+    card: "border-chart-2/20",
+    rank: "bg-chart-2 text-white",
+    metric: "text-chart-2",
+  },
+  worst: {
+    card: "border-chart-5/20",
+    rank: "bg-chart-5/10 text-chart-5",
+    metric: "text-chart-5",
+  },
+} satisfies Record<PerformanceCardProps["variant"], {
+  card: string;
+  rank: string;
+  metric: string;
+}>;

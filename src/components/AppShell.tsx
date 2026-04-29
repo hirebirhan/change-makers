@@ -58,17 +58,30 @@ export function AppShell({ children, channel, onRefresh, refreshing, lastUpdated
                 className="h-12 gap-3 rounded-xl px-2 data-[state=open]:bg-sidebar-accent"
                 render={<Link href="/" />}
               >
-                <div className="relative flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-red-700 shadow-sm ring-1 ring-red-500/20">
-                  {YT_LOGO}
+                <div className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted shadow-sm ring-1 ring-border">
+                  {channel?.profileImageUrl ? (
+                    <Image
+                      src={channel.profileImageUrl}
+                      alt={channel.channelName}
+                      width={36}
+                      height={36}
+                      className="size-9 object-cover"
+                      priority
+                    />
+                  ) : (
+                    <div className="flex size-full items-center justify-center bg-gradient-to-br from-red-500 to-red-700">
+                      {YT_LOGO}
+                    </div>
+                  )}
                   <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-emerald-500 ring-2 ring-sidebar" />
                 </div>
 
                 <div className="grid flex-1 text-left leading-tight">
                   <span className="truncate text-sm font-semibold tracking-tight">
-                    Birhan Tech Corner
+                    {channel?.channelName ?? "Birhan Tech Corner"}
                   </span>
                   <span className="truncate text-xs text-muted-foreground">
-                    YouTube Analytics
+                    {channel?.customUrl ?? "YouTube Analytics"}
                   </span>
                 </div>
               </SidebarMenuButton>
@@ -149,38 +162,6 @@ export function AppShell({ children, channel, onRefresh, refreshing, lastUpdated
               )}
               <ThemeToggle />
               <Separator orientation="vertical" className="h-5 mx-1" />
-              {channel && (
-                <>
-                  {channel.profileImageUrl ? (
-                    <Image src={channel.profileImageUrl} alt={channel.channelName} width={28} height={28} className="rounded-full object-cover ring-2 ring-border" />
-                  ) : (
-                    <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-bold">
-                      {channel.channelName.charAt(0)}
-                    </div>
-                  )}
-                  <div className="hidden md:block ml-1 mr-1">
-                    <a
-                      href={`https://www.youtube.com/${channel.customUrl}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm font-semibold leading-none hover:text-primary transition-colors block"
-                    >
-                      {channel.channelName}
-                    </a>
-                    {channel.customUrl && (
-                      <a
-                        href={`https://www.youtube.com/${channel.customUrl}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-muted-foreground hover:text-primary transition-colors block"
-                      >
-                        {channel.customUrl}
-                      </a>
-                    )}
-                  </div>
-                  <Separator orientation="vertical" className="h-5 mx-1" />
-                </>
-              )}
               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={logout}>
                 <LogOut className="w-4 h-4" />
               </Button>
