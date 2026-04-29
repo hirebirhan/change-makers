@@ -142,7 +142,7 @@ function analyzeCharacterLimits(title: string): { length: number; mobileTruncate
 
 export async function POST(req: NextRequest) {
   try {
-    const { title, topKeywords = [], videoData = [], autofix = false } = await req.json();
+    const { title, topKeywords = [], autofix = false } = await req.json();
     
     if (!title || typeof title !== "string") {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });

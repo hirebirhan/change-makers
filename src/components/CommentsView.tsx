@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Comment, YouTubeApiResponse } from "@/types/youtube";
 import { fetchYouTubeAnalytics } from "@/lib/youtube-api";
+import type { CommentSummary } from "@/lib/comments-server";
 import { MessageCircle, ThumbsUp } from "lucide-react";
 import { SummaryCards } from "@/components/comments/SummaryCards";
 import { CommentFilters } from "@/components/comments/CommentFilters";
@@ -17,20 +18,23 @@ import { Pagination } from "@/components/comments/Pagination";
 
 const COMMENTS_PER_PAGE = 20;
 
-interface CommentSummary {
-  positive: number;
-  neutral: number;
-  negative: number;
-  total: number;
-  positiveRate: number;
+interface CommentsData {
+  comments: Comment[];
+  summary: CommentSummary;
 }
 
-export function CommentsView({ initialData }: { initialData: YouTubeApiResponse }) {
+export function CommentsView({
+  initialData,
+  initialCommentsData,
+}: {
+  initialData: YouTubeApiResponse;
+  initialCommentsData: CommentsData;
+}) {
   const [data, setData] = useState(initialData);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [summary, setSummary] = useState<CommentSummary | null>(null);
+  const [comments, setComments] = useState(initialCommentsData.comments);
+  const [summary, setSummary] = useState<CommentSummary | null>(initialCommentsData.summary);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -39,44 +43,28 @@ export function CommentsView({ initialData }: { initialData: YouTubeApiResponse 
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
+    setLoading(true);
+    setError(null);
     try {
       const result = await fetchYouTubeAnalytics();
+      const commentsResult = await fetchComments(result.videos);
       setData(result);
+      setComments(commentsResult.comments);
+      setSummary(commentsResult.summary);
       setLastUpdated(new Date());
+    } catch (refreshError) {
+      setError(refreshError instanceof Error ? refreshError.message : "Failed to refresh comments");
     } finally {
+      setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
-  useEffect(() => {
-    if (!data.videos.length) return;
-    setLoading(true);
-    const allVideoIds = data.videos.map((v) => v.id);
-
-    fetch("/api/comments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ videoIds: allVideoIds }),
-    })
-      .then((r) => r.json())
-      .then((d) => {
-        const commentsWithTitles = d.comments.map((c: Comment) => ({
-          ...c,
-          videoTitle: data.videos.find((v) => v.id === c.videoId)?.title ?? "Unknown",
-        }));
-        setComments(commentsWithTitles);
-        setSummary(d.summary);
-      })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [data]);
-
   const filtered = useMemo(() => {
-    const result = comments
+    const normalizedQuery = query.toLowerCase();
+    return comments
       .filter((c) => sentiment === "all" || c.sentiment === sentiment)
-      .filter((c) => c.text.toLowerCase().includes(query.toLowerCase()) || c.author.toLowerCase().includes(query.toLowerCase()));
-    setCurrentPage(1);
-    return result;
+      .filter((c) => c.text.toLowerCase().includes(normalizedQuery) || c.author.toLowerCase().includes(normalizedQuery));
   }, [comments, sentiment, query]);
 
   const totalPages = Math.ceil(filtered.length / COMMENTS_PER_PAGE);
@@ -98,8 +86,14 @@ export function CommentsView({ initialData }: { initialData: YouTubeApiResponse 
         <CommentFilters
           query={query}
           sentiment={sentiment}
-          onQueryChange={setQuery}
-          onSentimentChange={setSentiment}
+          onQueryChange={(value) => {
+            setQuery(value);
+            setCurrentPage(1);
+          }}
+          onSentimentChange={(value) => {
+            setSentiment(value);
+            setCurrentPage(1);
+          }}
         />
 
         {loading ? (
@@ -141,4 +135,29 @@ export function CommentsView({ initialData }: { initialData: YouTubeApiResponse 
       </main>
     </AppShell>
   );
+}
+
+async function fetchComments(videos: YouTubeApiResponse["videos"]): Promise<CommentsData> {
+  if (!videos.length) return { comments: [], summary: { positive: 0, neutral: 0, negative: 0, total: 0, positiveRate: 0 } };
+
+  const response = await fetch("/api/comments", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ videoIds: videos.map((video) => video.id) }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch comments: ${response.statusText}`);
+  }
+
+  const result = (await response.json()) as CommentsData;
+  const titles = new Map(videos.map((video) => [video.id, video.title]));
+
+  return {
+    comments: result.comments.map((comment) => ({
+      ...comment,
+      videoTitle: titles.get(comment.videoId) ?? comment.videoTitle,
+    })),
+    summary: result.summary,
+  };
 }

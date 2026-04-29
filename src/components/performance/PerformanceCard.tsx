@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Eye, Heart, MessageCircle, Zap, Clock, TrendingUp, TrendingDown } from "lucide-react";
+import { Eye, Heart, MessageCircle, Zap } from "lucide-react";
 import type { VideoPerformance } from "@/lib/analytics-utils";
 
 interface PerformanceCardProps {
@@ -27,12 +27,7 @@ function formatDuration(duration: string) {
 }
 
 export function PerformanceCard({ perf, rank, variant }: PerformanceCardProps) {
-  const daysOld = Math.floor((Date.now() - new Date(perf.video.publishedAt).getTime()) / 86400000);
-  
-  const suggestions = [];
-  if (perf.likeRatio < 1) suggestions.push("Low likes");
-  if (perf.commentRatio < 0.5) suggestions.push("Low engagement");
-  if (perf.viewsPerDay < 10) suggestions.push("Low visibility");
+  const suggestions = getPerformanceSuggestions(perf);
 
   const rankColors = {
     best: "bg-chart-1 text-white",
@@ -70,7 +65,7 @@ export function PerformanceCard({ perf, rank, variant }: PerformanceCardProps) {
               {perf.video.title}
             </a>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {new Date(perf.video.publishedAt).toLocaleDateString()} · {daysOld}d ago
+              {new Date(perf.video.publishedAt).toLocaleDateString()} · {perf.daysOld}d ago
             </p>
           </div>
 
@@ -109,4 +104,12 @@ export function PerformanceCard({ perf, rank, variant }: PerformanceCardProps) {
       </div>
     </Card>
   );
+}
+
+function getPerformanceSuggestions(perf: VideoPerformance) {
+  const suggestions = [];
+  if (perf.likeRatio < 1) suggestions.push("Low likes");
+  if (perf.commentRatio < 0.5) suggestions.push("Low engagement");
+  if (perf.viewsPerDay < 10) suggestions.push("Low visibility");
+  return suggestions;
 }

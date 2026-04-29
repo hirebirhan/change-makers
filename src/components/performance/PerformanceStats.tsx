@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { TrendingUp, Eye, Heart, MessageCircle, Zap, Video } from "lucide-react";
+import { TrendingUp, Eye, Heart, MessageCircle, Zap } from "lucide-react";
 import type { VideoPerformance } from "@/lib/analytics-utils";
 
 interface PerformanceStatsProps {

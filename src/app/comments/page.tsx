@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getYouTubeData } from "@/lib/youtube-server";
+import { fetchCommentsForVideos } from "@/lib/comments-server";
 import { CommentsView } from "@/components/CommentsView";
 
 export const metadata: Metadata = {
@@ -18,5 +19,10 @@ export default async function CommentsPage() {
   }
   
   const data = await getYouTubeData();
-  return <CommentsView initialData={data} />;
+  const commentsData = await fetchCommentsForVideos(
+    data.videos.map((video) => video.id),
+    data.videos
+  );
+
+  return <CommentsView initialData={data} initialCommentsData={commentsData} />;
 }

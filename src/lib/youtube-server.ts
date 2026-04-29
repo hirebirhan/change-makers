@@ -4,12 +4,48 @@ const API_KEY = process.env.YOUTUBE_API_KEY;
 const CHANNEL_ID = process.env.YOUTUBE_CHANNEL_ID;
 const BASE = "https://www.googleapis.com/youtube/v3";
 
-async function fetchChannel(): Promise<ChannelStats> {
-  const res = await fetch(
-    `${BASE}/channels?part=snippet,statistics,brandingSettings&id=${CHANNEL_ID}&key=${API_KEY}`,
-    { next: { revalidate: 300 } }
-  );
+function assertYouTubeEnv() {
+  if (!API_KEY) throw new Error("YOUTUBE_API_KEY is not configured");
+  if (!CHANNEL_ID) throw new Error("YOUTUBE_CHANNEL_ID is not configured");
+}
+
+async function fetchYouTube<T>(path: string, params: Record<string, string>): Promise<T> {
+  assertYouTubeEnv();
+  const apiKey = API_KEY as string;
+  const url = new URL(`${BASE}/${path}`);
+  Object.entries({ ...params, key: apiKey }).forEach(([key, value]) => {
+    url.searchParams.set(key, value);
+  });
+
+  const res = await fetch(url, { next: { revalidate: 300 } });
   const data = await res.json();
+
+  if (!res.ok) {
+    const message = data?.error?.message || `YouTube API request failed with ${res.status}`;
+    throw new Error(message);
+  }
+
+  return data as T;
+}
+
+type YouTubeListResponse<T> = {
+  items?: T[];
+};
+
+async function fetchChannel(): Promise<ChannelStats> {
+  const data = await fetchYouTube<YouTubeListResponse<{
+    snippet: {
+      title: string;
+      description: string;
+      customUrl?: string;
+      thumbnails?: { high?: { url: string }; default?: { url: string } };
+    };
+    statistics: { subscriberCount?: string; viewCount?: string; videoCount?: string };
+    brandingSettings?: { image?: { bannerExternalUrl?: string } };
+  }>>("channels", {
+    part: "snippet,statistics,brandingSettings",
+    id: CHANNEL_ID ?? "",
+  });
   const ch = data.items?.[0];
   if (!ch) throw new Error("Channel not found");
   return {
@@ -26,29 +62,43 @@ async function fetchChannel(): Promise<ChannelStats> {
 }
 
 async function fetchVideos(): Promise<Video[]> {
-  const chRes = await fetch(
-    `${BASE}/channels?part=contentDetails&id=${CHANNEL_ID}&key=${API_KEY}`,
-    { next: { revalidate: 300 } }
-  );
-  const chData = await chRes.json();
+  const chData = await fetchYouTube<YouTubeListResponse<{
+    contentDetails?: { relatedPlaylists?: { uploads?: string } };
+  }>>("channels", {
+    part: "contentDetails",
+    id: CHANNEL_ID ?? "",
+  });
   const uploadsId = chData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
   if (!uploadsId) return [];
 
-  const plRes = await fetch(
-    `${BASE}/playlistItems?part=contentDetails&playlistId=${uploadsId}&maxResults=20&key=${API_KEY}`,
-    { next: { revalidate: 300 } }
-  );
-  const plData = await plRes.json();
+  const plData = await fetchYouTube<YouTubeListResponse<{
+    contentDetails: { videoId: string };
+  }>>("playlistItems", {
+    part: "contentDetails",
+    playlistId: uploadsId,
+    maxResults: "20",
+  });
   const videoIds: string[] = (plData.items ?? []).map(
     (item: { contentDetails: { videoId: string } }) => item.contentDetails.videoId
   );
   if (!videoIds.length) return [];
 
-  const vRes = await fetch(
-    `${BASE}/videos?part=snippet,statistics,contentDetails,status&id=${videoIds.join(",")}&key=${API_KEY}`,
-    { next: { revalidate: 300 } }
-  );
-  const vData = await vRes.json();
+  const vData = await fetchYouTube<YouTubeListResponse<{
+    id: string;
+    snippet: {
+      title: string;
+      description: string;
+      thumbnails: { maxres?: { url: string }; high?: { url: string }; default?: { url: string } };
+      publishedAt: string;
+      tags?: string[];
+    };
+    statistics: { viewCount?: string; likeCount?: string; commentCount?: string };
+    contentDetails: { duration: string };
+    status: { privacyStatus: string };
+  }>>("videos", {
+    part: "snippet,statistics,contentDetails,status",
+    id: videoIds.join(","),
+  });
 
   return (vData.items ?? [])
     .filter((v: { status: { privacyStatus: string } }) => v.status.privacyStatus === "public")

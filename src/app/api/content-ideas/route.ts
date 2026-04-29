@@ -1,34 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+interface CommentInput {
+  text?: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    console.log("[Content Ideas] Starting generation...");
-    const { comments } = await request.json();
-    console.log("[Content Ideas] Received comments:", comments?.length);
+    const body = (await request.json()) as { comments?: unknown };
+    const comments = Array.isArray(body.comments) ? body.comments as CommentInput[] : [];
 
     if (!comments || comments.length === 0) {
-      console.log("[Content Ideas] No comments provided");
       return NextResponse.json({ ideas: [] });
     }
 
-    // Extract comment texts and identify questions/requests
     const commentTexts = comments
-      .map((c: any) => c.text)
-      .filter((text: string) => text && text.length > 10)
+      .map((comment) => comment.text)
+      .filter((text): text is string => typeof text === "string" && text.length > 10)
       .slice(0, 100);
 
-    console.log("[Content Ideas] Filtered comment texts:", commentTexts.length);
-
     if (commentTexts.length === 0) {
-      console.log("[Content Ideas] No valid comment texts after filtering");
       return NextResponse.json({ ideas: [] });
     }
 
-    // Try Gemini API if available
     if (process.env.GEMINI_API_KEY) {
       try {
-        console.log("[Content Ideas] Calling Gemini API...");
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
@@ -46,9 +42,7 @@ Provide 5-8 specific, actionable video ideas that would address viewer needs. Fo
         const result = await model.generateContent(prompt);
         const response = result.response;
         const text = response.text();
-        console.log("[Content Ideas] Gemini response:", text.substring(0, 200));
 
-        // Parse the response into individual ideas
         const ideas = text
           .split("\n")
           .filter((line) => line.trim().length > 0)
@@ -57,23 +51,17 @@ Provide 5-8 specific, actionable video ideas that would address viewer needs. Fo
           .filter((line) => line.length > 20 && line.length < 200)
           .slice(0, 8);
 
-        console.log("[Content Ideas] Parsed ideas:", ideas.length);
         if (ideas.length > 0) {
           return NextResponse.json({ ideas });
         }
-      } catch (error: any) {
-        console.error("[Content Ideas] Gemini error:", error?.message);
-        // Fall through to keyword-based approach
+      } catch {
+        // Fall back to local keyword extraction when Gemini is unavailable.
       }
     }
 
-    // Fallback: Keyword-based content idea generation
-    console.log("[Content Ideas] Using keyword-based generation...");
     const ideas = generateKeywordBasedIdeas(commentTexts);
-    console.log("[Content Ideas] Generated ideas:", ideas.length);
     return NextResponse.json({ ideas });
-  } catch (error: any) {
-    console.error("[Content Ideas] Error:", error?.message || error);
+  } catch {
     return NextResponse.json({ ideas: [] });
   }
 }
@@ -81,10 +69,7 @@ Provide 5-8 specific, actionable video ideas that would address viewer needs. Fo
 function generateKeywordBasedIdeas(commentTexts: string[]): string[] {
   const ideas: string[] = [];
   const allText = commentTexts.join(" ");
-  
-  console.log("[Content Ideas] Sample comments:", commentTexts.slice(0, 3));
 
-  // Extract questions with better context
   const questionPatterns = [
     { regex: /how (do|to|can|does|did|should|would) (i |you |we |they )?([^?.!]+)/gi, template: "How to" },
     { regex: /what (is|are|does|do|was|were) ([^?.!]+)/gi, template: "Understanding" },
@@ -114,14 +99,12 @@ function generateKeywordBasedIdeas(commentTexts: string[]): string[] {
           if (!foundIdeas.has(idea.toLowerCase())) {
             foundIdeas.add(idea.toLowerCase());
             ideas.push(idea.charAt(0).toUpperCase() + idea.slice(1));
-            console.log("[Content Ideas] Found:", idea);
           }
         }
       }
     }
   }
 
-  // Extract frequently mentioned technical terms/topics
   const stopWords = new Set(["this", "that", "with", "from", "have", "been", "were", "their", "would", "there", "could", "about", "which", "these", "those", "very", "more", "some", "just", "like", "good", "great", "nice", "thanks", "thank", "please", "video", "videos", "channel", "comment", "comments"]);
   
   const words = allText.toLowerCase()
@@ -133,12 +116,10 @@ function generateKeywordBasedIdeas(commentTexts: string[]): string[] {
   words.forEach(w => wordCount.set(w, (wordCount.get(w) || 0) + 1));
   
   const topWords = [...wordCount.entries()]
-    .filter(([word, count]) => count >= 2)
+    .filter(([, count]) => count >= 2)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
     .map(([word]) => word);
-
-  console.log("[Content Ideas] Top words:", topWords);
 
   if (topWords.length >= 2 && ideas.length < 6) {
     ideas.push(`Deep dive: ${topWords[0]} and ${topWords[1]}`);
@@ -150,13 +131,11 @@ function generateKeywordBasedIdeas(commentTexts: string[]): string[] {
     ideas.push(`${topWords[2]} explained for beginners`);
   }
 
-  // Only add generic ideas if we found absolutely nothing
   if (ideas.length === 0) {
     ideas.push("Q&A: Answering your most asked questions");
     ideas.push("Behind the scenes: How I create content");
     ideas.push("Tips and tricks based on viewer feedback");
   }
 
-  console.log("[Content Ideas] Total ideas generated:", ideas.length);
   return ideas.slice(0, 8);
 }

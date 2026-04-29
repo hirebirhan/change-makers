@@ -124,7 +124,7 @@ export function GrowthView({ initialData, milestones, streak }: GrowthViewProps)
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Achievements</CardTitle>
-            <CardDescription className="text-xs">Milestones you've already reached</CardDescription>
+            <CardDescription className="text-xs">Milestones you have already reached</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">

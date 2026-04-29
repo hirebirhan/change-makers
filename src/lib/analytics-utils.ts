@@ -20,6 +20,7 @@ export interface VideoLengthDistribution {
 
 export interface VideoPerformance {
   video: Video;
+  daysOld: number;
   viewsPerDay: number;
   likeRatio: number;
   commentRatio: number;
@@ -126,6 +127,7 @@ export function analyzeVideoPerformance(videos: Video[]): {
 
     return {
       video,
+      daysOld,
       viewsPerDay,
       likeRatio,
       commentRatio,

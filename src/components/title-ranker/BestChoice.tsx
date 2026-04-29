@@ -14,7 +14,7 @@ export function BestChoice({ bestChoice }: BestChoiceProps) {
   return (
     <div className="space-y-3">
       <div>
-        <h2 className="text-sm font-semibold">AI's Best Choice</h2>
+        <h2 className="text-sm font-semibold">AI Best Choice</h2>
         <p className="text-xs text-muted-foreground mt-1">Gemini analyzed all alternatives and picked the highest-scoring title</p>
       </div>
       <div className="p-4 rounded-xl border-2 border-primary bg-primary/5">
