@@ -26,7 +26,7 @@ const NAV = [
   { href: "/comments", label: "Comments", icon: MessageCircle },
   { href: "/seo", label: "SEO Studio", icon: Sparkles },
   { href: "/title-ranker", label: "Title Ranker", icon: Type },
-  // { href: "/ai", label: "AI Studio", icon: Brain },
+  { href: "/ai", label: "AI Studio", icon: Brain },
   // { href: "/debug", label: "Debug API", icon: Bug },
 ];
 

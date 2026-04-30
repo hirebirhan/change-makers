@@ -63,7 +63,7 @@ export function GrowthView({ initialData, milestones, streak }: GrowthViewProps)
           <Card size="sm">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-primary/10">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-chart-1/10">
                   <Target className="size-3.5 text-chart-1" />
                 </div>
                 <CardDescription className="text-xs">Longest Streak</CardDescription>
@@ -75,7 +75,7 @@ export function GrowthView({ initialData, milestones, streak }: GrowthViewProps)
           <Card size="sm">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-primary/10">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-chart-2/10">
                   <Calendar className="size-3.5 text-chart-2" />
                 </div>
                 <CardDescription className="text-xs">Last Upload</CardDescription>
@@ -98,8 +98,8 @@ export function GrowthView({ initialData, milestones, streak }: GrowthViewProps)
                 <div key={milestone.type} className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Icon className="w-4 h-4 text-primary" />
+                      <div className="w-8 h-8 rounded-lg bg-chart-1/10 flex items-center justify-center">
+                        <Icon className="w-4 h-4 text-chart-1" />
                       </div>
                       <div>
                         <p className="text-sm font-medium capitalize">{milestone.type}</p>

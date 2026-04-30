@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { DailyMetric } from "@/types/youtube";
-import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
@@ -80,7 +80,12 @@ export default function AnalyticsChart({ data }: AnalyticsChartProps) {
     <Tabs defaultValue="views">
       <Card>
         <CardHeader>
-          <CardTitle>Performance</CardTitle>
+          <div>
+            <CardTitle>Performance</CardTitle>
+            <CardDescription className="max-w-2xl text-xs leading-relaxed">
+              Calculated from public YouTube Data API totals: views are spread evenly across each video&apos;s active days in the selected window; watch time, subscriber changes, and audience split are derived estimates, not YouTube Analytics API period data.
+            </CardDescription>
+          </div>
           <CardAction className="flex items-center gap-2">
             <div className="flex gap-1">
               {(["7", "30"] as Range[]).map((r) => (
