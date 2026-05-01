@@ -4,8 +4,8 @@ import { redirect } from "next/navigation";
 import { ShortMakerClient } from "./ShortMakerClient";
 
 export const metadata: Metadata = {
-  title: "Short Maker",
-  description: "Create a vertical Short from a local video in your browser.",
+  title: "Video Format Studio",
+  description: "Format and export local videos in your browser.",
 };
 
 export default async function ShortMakerPage() {
