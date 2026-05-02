@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { ShortMakerClient } from "./ShortMakerClient";
 
 export const metadata: Metadata = {
-  title: "Video Format Studio",
-  description: "Format and export local videos in your browser.",
+  title: "Short Maker",
+  description: "Format, trim, and export videos for Shorts, TikTok, and Reels — processed locally in your browser.",
 };
 
 export default async function ShortMakerPage() {
