@@ -3,7 +3,7 @@
 import { ChannelStats } from "@/types/youtube";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign } from "lucide-react";
+import { DollarSign, CheckCircle2 } from "lucide-react";
 import { RequirementCard } from "@/components/monetization/RequirementCard";
 import { useMemo } from "react";
 
@@ -33,7 +33,7 @@ export default function MonetizationProgress({ stats, totalWatchTimeHours }: Mon
         met: stats.subscriberCount >= REQUIREMENTS.subscribers,
       },
       {
-        label: "Watch Time Hours",
+        label: "Watch Time (est.)",
         current: Math.round(totalWatchTimeHours).toLocaleString(),
         target: REQUIREMENTS.watchTimeHours.toLocaleString(),
         progress: watchTimeProgress,
@@ -85,10 +85,9 @@ export default function MonetizationProgress({ stats, totalWatchTimeHours }: Mon
         ))}
 
         {isEligible && (
-          <div className="pt-2 border-t">
-            <p className="text-xs text-chart-1 font-medium">
-              🎉 Your channel meets all requirements for monetization!
-            </p>
+          <div className="flex items-center gap-1.5 pt-2 border-t text-xs text-chart-1 font-medium">
+            <CheckCircle2 className="size-3.5 shrink-0" />
+            <span>Channel meets all requirements for monetization</span>
           </div>
         )}
       </CardContent>

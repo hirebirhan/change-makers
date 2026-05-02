@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { getYouTubeData } from "@/lib/youtube-server";
 import { AIView } from "@/components/AIView";
 
@@ -9,14 +7,9 @@ export const metadata: Metadata = {
   description: "AI-powered channel analysis, video topic ideas, description writing, and title optimization using Google Gemini.",
 };
 
+export const revalidate = 300;
+
 export default async function AIPage() {
-  const cookieStore = await cookies();
-  const isAuthenticated = cookieStore.get("yt_auth")?.value === "true";
-  
-  if (!isAuthenticated) {
-    redirect("/login");
-  }
-  
   const data = await getYouTubeData();
   return <AIView initialData={data} />;
 }

@@ -93,7 +93,7 @@
 --chart-3: oklch(0.75 0.01 240);  /* Light gray for supporting data */
 --chart-4: oklch(0.55 0.08 280);  /* Complementary purple */
 --chart-5: oklch(0.70 0.18 40);   /* Lighter orange for warnings */
---radius: 0;
+--radius: 0.25rem;
 --sidebar: oklch(0.988 0.003 106.5);
 --sidebar-foreground: oklch(0.153 0.006 107.1);
 --sidebar-primary: oklch(0.6 0.118 184.704);

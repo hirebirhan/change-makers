@@ -16,8 +16,8 @@ const YT_LOGO = (
 
 export function LoginPage() {
   const { login } = useAuth();
-  const [username, setUsername] = useState(process.env.NODE_ENV === "development" ? "admin" : "");
-  const [password, setPassword] = useState(process.env.NODE_ENV === "development" ? "changem@kers2025" : "");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 

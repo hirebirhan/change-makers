@@ -1,16 +1,15 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { getYouTubeData } from "@/lib/youtube-server";
 import { PublishingScheduleView } from "@/components/PublishingScheduleView";
 
+export const metadata: Metadata = {
+  title: "Publishing Schedule",
+  description: "Recommended upload schedule based on your channel's best-performing days and times.",
+};
+
+export const revalidate = 300;
+
 export default async function PublishingSchedulePage() {
-  const cookieStore = await cookies();
-  const authCookie = cookieStore.get("yt_auth");
-
-  if (!authCookie || authCookie.value !== "true") {
-    redirect("/login");
-  }
-
   const data = await getYouTubeData();
 
   return <PublishingScheduleView initialData={data} />;

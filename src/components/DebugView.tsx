@@ -10,10 +10,11 @@ import { fetchYouTubeAnalytics } from "@/lib/youtube-api";
 interface DebugViewProps {
   initialData: YouTubeApiResponse;
   rawData: {
-    channelData: any;
-    uploadsData: any;
-    playlistData: any;
-    videosData: any;
+    channelData?: unknown;
+    uploadsData?: unknown;
+    playlistData?: unknown;
+    videosData?: unknown;
+    error?: string;
   };
 }
 

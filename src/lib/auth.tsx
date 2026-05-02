@@ -3,8 +3,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
-const CREDENTIALS = { username: "admin", password: "changem@kers2025" };
-
 interface AuthCtx {
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<boolean>;
@@ -25,13 +23,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function login(username: string, password: string) {
-    if (username === CREDENTIALS.username && password === CREDENTIALS.password) {
-      const res = await fetch("/api/auth/login", { method: "POST" });
-      if (res.ok) {
-        setIsAuthenticated(true);
-        router.push("/");
-        return true;
-      }
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    if (res.ok) {
+      setIsAuthenticated(true);
+      router.push("/");
+      return true;
     }
     return false;
   }

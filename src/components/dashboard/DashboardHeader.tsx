@@ -18,7 +18,7 @@ export function DashboardHeader({ dateRange, onDateRangeChange }: DashboardHeade
     <div className="flex items-center justify-between">
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="text-xs text-muted-foreground leading-none">Channel performance overview</p>
+        <p className="text-xs text-muted-foreground">Channel performance overview</p>
       </div>
       <Tabs value={dateRange} onValueChange={(value) => onDateRangeChange(value as DateRange)}>
         <TabsList>

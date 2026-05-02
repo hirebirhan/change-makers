@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { getYouTubeData } from "@/lib/youtube-server";
 import { DebugView } from "@/components/DebugView";
 
@@ -8,7 +6,13 @@ const API_KEY = process.env.YOUTUBE_API_KEY;
 const CHANNEL_ID = process.env.YOUTUBE_CHANNEL_ID;
 const BASE = "https://www.googleapis.com/youtube/v3";
 
-async function fetchRawYouTubeData() {
+async function fetchRawYouTubeData(): Promise<{
+  channelData?: unknown;
+  uploadsData?: unknown;
+  playlistData?: unknown;
+  videosData?: unknown;
+  error?: string;
+}> {
   if (!API_KEY || !CHANNEL_ID) {
     return { error: "Missing API_KEY or CHANNEL_ID" };
   }
@@ -54,13 +58,6 @@ export const metadata: Metadata = {
 };
 
 export default async function DebugPage() {
-  const cookieStore = await cookies();
-  const isAuthenticated = cookieStore.get("yt_auth")?.value === "true";
-
-  if (!isAuthenticated) {
-    redirect("/login");
-  }
-
   const data = await getYouTubeData();
   const rawData = await fetchRawYouTubeData();
   return <DebugView initialData={data} rawData={rawData} />;

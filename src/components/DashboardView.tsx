@@ -57,7 +57,7 @@ export function DashboardView({ initialData }: { initialData: YouTubeApiResponse
 
   return (
     <AppShell channel={data.channel} onRefresh={refresh} refreshing={refreshing} lastUpdated={lastUpdated}>
-      <main className="flex-1 w-full px-4 py-4 space-y-4">
+      <main className="flex-1 w-full px-4 md:px-6 py-5 space-y-5">
         <DashboardHeader dateRange={dateRange} onDateRangeChange={setDateRange} />
 
         {refreshError && (
@@ -75,19 +75,12 @@ export function DashboardView({ initialData }: { initialData: YouTubeApiResponse
           <TopVideosCard videos={regularVideos} />
         </div>
 
-        <MonetizationProgress stats={data.channel} totalWatchTimeHours={totalWatchTimeHours} />
-
         <ShortsSection shorts={shorts} />
+
+        <MonetizationProgress stats={data.channel} totalWatchTimeHours={totalWatchTimeHours} />
 
         <ReportsSection reports={data.reports} />
       </main>
-
-      <footer className="border-t border-border">
-        <div className="w-full px-4 py-3 flex items-center justify-between">
-          <span className="text-xs font-medium">Birhan Tech Corner Analytics</span>
-          <p className="text-xs text-muted-foreground">Powered by YouTube Data API v3</p>
-        </div>
-      </footer>
     </AppShell>
   );
 }

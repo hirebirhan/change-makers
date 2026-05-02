@@ -25,8 +25,8 @@ export default function ReportsSection({ reports }: ReportsSectionProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base font-semibold">Monthly Breakdown</CardTitle>
-        <CardDescription className="text-xs">Last 12 months performance</CardDescription>
+        <CardTitle className="text-base font-semibold">Monthly Views</CardTitle>
+        <CardDescription className="text-xs">Views per month over the last 12 months</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-80 w-full">
