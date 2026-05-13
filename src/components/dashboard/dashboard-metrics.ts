@@ -3,9 +3,9 @@ import type { ChannelStats, DailyMetric, Video, YouTubeApiResponse } from "@/typ
 export type DateRange = "lifetime" | "year" | "30days" | "7days";
 
 export interface DashboardTrends {
-  views: number;
-  watchTime: number;
-  videos: number;
+  views: number | null;
+  watchTime: number | null;
+  videos: number | null;
 }
 
 const RANGE_DAYS: Record<Exclude<DateRange, "lifetime">, number> = {

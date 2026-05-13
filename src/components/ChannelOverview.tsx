@@ -13,9 +13,9 @@ interface ChannelOverviewProps {
   stats: ChannelStats;
   totalWatchTimeHours?: number;
   trends?: {
-    views: number;
-    watchTime: number;
-    videos: number;
+    views: number | null;
+    watchTime: number | null;
+    videos: number | null;
   };
 }
 
@@ -98,7 +98,7 @@ export default function ChannelOverview({ stats, totalWatchTimeHours, trends }: 
                   {suffix && (
                     <span className="text-xs text-muted-foreground/60">{suffix}</span>
                   )}
-                  {trend !== undefined && (
+                  {trend != null && (
                     <div
                       className={`flex items-center gap-0.5 text-xs font-semibold ${
                         trend > 0
