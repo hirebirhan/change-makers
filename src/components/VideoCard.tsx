@@ -8,6 +8,7 @@ interface VideoCardProps {
   video: Video;
   rank?: number;
   layout?: "list" | "grid";
+  priority?: boolean;
 }
 
 function formatNumber(num: number): string {
@@ -32,7 +33,7 @@ const YT_PLACEHOLDER = (
   </svg>
 );
 
-export default function VideoCard({ video, rank, layout = "list" }: VideoCardProps) {
+export default function VideoCard({ video, rank, layout = "list", priority = false }: VideoCardProps) {
   if (layout === "grid") {
     return (
       <a
@@ -47,6 +48,7 @@ export default function VideoCard({ video, rank, layout = "list" }: VideoCardPro
               src={video.thumbnailUrl}
               alt={video.title}
               fill
+              priority={priority}
               className="object-cover group-hover:scale-105 transition-transform duration-300"
               sizes="(max-width: 768px) 100vw, 33vw"
             />
@@ -77,7 +79,7 @@ export default function VideoCard({ video, rank, layout = "list" }: VideoCardPro
     <div className="flex gap-3 p-2 rounded-lg hover:bg-muted/60 transition-colors group">
       <div className="relative shrink-0 w-16 h-10 rounded-md overflow-hidden bg-muted">
         {video.thumbnailUrl ? (
-          <Image src={video.thumbnailUrl} alt={video.title} fill className="object-cover" sizes="64px" />
+          <Image src={video.thumbnailUrl} alt={video.title} fill priority={priority} className="object-cover" sizes="64px" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground/40">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">

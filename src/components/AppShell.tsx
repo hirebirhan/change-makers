@@ -3,10 +3,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   LogOut, LayoutDashboard, PlaySquare, Sparkles, RefreshCw,
   MessageCircle, Brain, Type, TrendingUp, CalendarClock, Scissors,
-  ExternalLink,
+  ExternalLink, BarChart2, Lightbulb, Scroll, KanbanSquare,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -30,6 +31,10 @@ const NAV = [
   { href: "/seo",                 label: "SEO Studio",         icon: Sparkles },
   { href: "/title-ranker",        label: "Title Ranker",       icon: Type },
   { href: "/ai",                  label: "AI Studio",          icon: Brain },
+  { href: "/growth",              label: "Growth",             icon: BarChart2 },
+  { href: "/insights",            label: "Insights",           icon: Lightbulb },
+  { href: "/script-maker",        label: "Script Maker",       icon: Scroll },
+  { href: "/pipeline",            label: "Pipeline",           icon: KanbanSquare },
 ];
 
 const YT_LOGO = (
@@ -56,6 +61,13 @@ interface AppShellProps {
 export function AppShell({ children, channel, onRefresh, refreshing, lastUpdated }: AppShellProps) {
   const { logout } = useAuth();
   const pathname = usePathname();
+  // Tick every 30 s so the "Updated X ago" label re-evaluates without a manual refresh
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!lastUpdated) return;
+    const id = setInterval(() => setTick((t) => t + 1), 30_000);
+    return () => clearInterval(id);
+  }, [lastUpdated]);
 
   return (
     <SidebarProvider className="min-h-screen">
@@ -172,7 +184,34 @@ export function AppShell({ children, channel, onRefresh, refreshing, lastUpdated
           </div>
         </nav>
 
-        {children}
+        <div className="flex-1 pb-16 sm:pb-0">
+          {children}
+        </div>
+
+        {/* Mobile bottom navigation — hidden on sm+ where the sidebar takes over */}
+        <nav className="fixed bottom-0 left-0 right-0 z-30 flex sm:hidden h-16 items-center justify-around border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          {[
+            { href: "/",           label: "Dashboard",  icon: LayoutDashboard },
+            { href: "/videos",     label: "Videos",     icon: PlaySquare },
+            { href: "/ai",         label: "AI Studio",  icon: Brain },
+            { href: "/title-ranker", label: "Titles",   icon: Type },
+            { href: "/comments",   label: "Comments",   icon: MessageCircle },
+          ].map(({ href, label, icon: Icon }) => {
+            const active = pathname === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors ${
+                  active ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                <Icon className={`size-5 ${active ? "stroke-[2.5]" : "stroke-[1.75]"}`} />
+                <span className="text-[10px] font-medium leading-none">{label}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </SidebarInset>
     </SidebarProvider>
   );

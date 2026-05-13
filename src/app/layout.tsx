@@ -6,6 +6,7 @@ import { AuthProvider } from "@/lib/auth";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
+import { IOSInstallBanner } from "@/components/IOSInstallBanner";
 
 const publicSans = Public_Sans({subsets:['latin'],variable:'--font-sans'});
 
@@ -68,6 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         <ServiceWorkerRegistration />
+        <IOSInstallBanner />
         <ThemeProvider>
           <TooltipProvider>
             <AuthProvider>{children}</AuthProvider>

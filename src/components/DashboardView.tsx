@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { YouTubeApiResponse } from "@/types/youtube";
 import { fetchYouTubeAnalytics } from "@/lib/youtube-api";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { AlertBanner } from "@/components/AlertSystem";
 import { ShortsSection } from "@/components/dashboard/ShortsSection";
 import { TopVideosCard } from "@/components/dashboard/TopVideosCard";
 import {
@@ -57,6 +58,7 @@ export function DashboardView({ initialData }: { initialData: YouTubeApiResponse
 
   return (
     <AppShell channel={data.channel} onRefresh={refresh} refreshing={refreshing} lastUpdated={lastUpdated}>
+      <AlertBanner stats={data.channel} />
       <main className="flex-1 w-full px-4 md:px-6 py-5 space-y-5">
         <DashboardHeader dateRange={dateRange} onDateRangeChange={setDateRange} />
 

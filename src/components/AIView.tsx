@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { YouTubeApiResponse } from "@/types/youtube";
 import { fetchYouTubeAnalytics } from "@/lib/youtube-api";
-import { Sparkles, Brain, Lightbulb, FileText, Type, Copy, Check, AlertCircle, RefreshCw } from "lucide-react";
+import { Sparkles, Brain, Lightbulb, FileText, Type, Copy, Check, AlertCircle, RefreshCw, Bookmark, BookmarkCheck, Trash2 } from "lucide-react";
 
 function MarkdownText({ text }: { text: string }) {
   const lines = text.split("\n");
@@ -44,7 +44,43 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-function ResultCard({ result, loading }: { result: string | null; loading: boolean }) {
+const SAVED_KEY = "ai-studio-saved-v1";
+
+interface SavedOutput { id: string; label: string; text: string; savedAt: number; }
+
+function useSavedOutputs() {
+  const [saved, setSaved] = useState<SavedOutput[]>(() => {
+    try { return JSON.parse(localStorage.getItem(SAVED_KEY) ?? "[]"); } catch { return []; }
+  });
+  function save(label: string, text: string) {
+    const entry: SavedOutput = { id: Math.random().toString(36).slice(2), label, text, savedAt: Date.now() };
+    setSaved((prev) => {
+      const next = [entry, ...prev].slice(0, 20); // keep last 20
+      localStorage.setItem(SAVED_KEY, JSON.stringify(next));
+      return next;
+    });
+  }
+  function remove(id: string) {
+    setSaved((prev) => {
+      const next = prev.filter((s) => s.id !== id);
+      localStorage.setItem(SAVED_KEY, JSON.stringify(next));
+      return next;
+    });
+  }
+  return { saved, save, remove };
+}
+
+function ResultCard({ result, loading, label }: { result: string | null; loading: boolean; label: string }) {
+  const [justSaved, setJustSaved] = useState(false);
+  const { save } = useSavedOutputs();
+
+  function saveOutput() {
+    if (!result) return;
+    save(label, result);
+    setJustSaved(true);
+    setTimeout(() => setJustSaved(false), 2000);
+  }
+
   if (loading) return (
     <Card>
       <CardContent className="py-12 flex flex-col items-center gap-3">
@@ -64,7 +100,12 @@ function ResultCard({ result, loading }: { result: string | null; loading: boole
             <Sparkles className="w-4 h-4 text-primary" />
             <CardTitle className="text-sm">Gemini Response</CardTitle>
           </div>
-          <CopyButton text={result} />
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon-sm" onClick={saveOutput} title="Save output">
+              {justSaved ? <BookmarkCheck className="w-3.5 h-3.5 text-primary" /> : <Bookmark className="w-3.5 h-3.5" />}
+            </Button>
+            <CopyButton text={result} />
+          </div>
         </div>
       </CardHeader>
       <CardContent><MarkdownText text={result} /></CardContent>
@@ -84,6 +125,7 @@ export function AIView({ initialData }: { initialData: YouTubeApiResponse }) {
   const [keywordInput, setKeywordInput] = useState("");
   const [descTitleInput, setDescTitleInput] = useState("");
   const [modelName, setModelName] = useState<string>("gemini-pro");
+  const { saved, remove } = useSavedOutputs();
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
@@ -160,11 +202,15 @@ export function AIView({ initialData }: { initialData: YouTubeApiResponse }) {
         )}
 
         <Tabs defaultValue="analyze">
-          <TabsList>
+          <TabsList className="flex-wrap">
             <TabsTrigger value="analyze"><Brain className="w-3.5 h-3.5 mr-1.5" />Channel Analysis</TabsTrigger>
             <TabsTrigger value="topics"><Lightbulb className="w-3.5 h-3.5 mr-1.5" />Topic Ideas</TabsTrigger>
             <TabsTrigger value="description"><FileText className="w-3.5 h-3.5 mr-1.5" />Description Writer</TabsTrigger>
             <TabsTrigger value="title"><Type className="w-3.5 h-3.5 mr-1.5" />Title Optimizer</TabsTrigger>
+            <TabsTrigger value="saved" className="gap-1.5">
+              <Bookmark className="w-3.5 h-3.5" />Saved
+              {saved.length > 0 && <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">{saved.length}</Badge>}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="analyze" className="mt-4 space-y-4">
@@ -179,7 +225,7 @@ export function AIView({ initialData }: { initialData: YouTubeApiResponse }) {
                 </Button>
               </CardContent>
             </Card>
-            <ResultCard result={results["analyze"] ?? null} loading={loadingMode === "analyze"} />
+            <ResultCard result={results["analyze"] ?? null} loading={loadingMode === "analyze"} label="Channel Analysis" />
           </TabsContent>
 
           <TabsContent value="topics" className="mt-4 space-y-4">
@@ -194,7 +240,7 @@ export function AIView({ initialData }: { initialData: YouTubeApiResponse }) {
                 </Button>
               </CardContent>
             </Card>
-            <ResultCard result={results["topics"] ?? null} loading={loadingMode === "topics"} />
+            <ResultCard result={results["topics"] ?? null} loading={loadingMode === "topics"} label="Topic Ideas" />
           </TabsContent>
 
           <TabsContent value="description" className="mt-4 space-y-4">
@@ -210,7 +256,7 @@ export function AIView({ initialData }: { initialData: YouTubeApiResponse }) {
                 </Button>
               </CardContent>
             </Card>
-            <ResultCard result={results["description"] ?? null} loading={loadingMode === "description"} />
+            <ResultCard result={results["description"] ?? null} loading={loadingMode === "description"} label="Description" />
           </TabsContent>
 
           <TabsContent value="title" className="mt-4 space-y-4">
@@ -227,7 +273,36 @@ export function AIView({ initialData }: { initialData: YouTubeApiResponse }) {
                 </Button>
               </CardContent>
             </Card>
-            <ResultCard result={results["title"] ?? null} loading={loadingMode === "title"} />
+            <ResultCard result={results["title"] ?? null} loading={loadingMode === "title"} label="Title Optimizer" />
+          </TabsContent>
+
+          <TabsContent value="saved" className="mt-4 space-y-3">
+            {saved.length === 0 ? (
+              <Card>
+                <CardContent className="py-10 flex flex-col items-center gap-2 text-center">
+                  <Bookmark className="w-8 h-8 text-muted-foreground/40" />
+                  <p className="text-sm text-muted-foreground">No saved outputs yet. Click the bookmark icon on any Gemini response to save it here.</p>
+                </CardContent>
+              </Card>
+            ) : saved.map((s) => (
+              <Card key={s.id}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-sm">{s.label}</CardTitle>
+                      <p className="text-xs text-muted-foreground">{new Date(s.savedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <CopyButton text={s.text} />
+                      <Button variant="ghost" size="icon-sm" onClick={() => remove(s.id)} className="text-muted-foreground hover:text-destructive">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent><MarkdownText text={s.text} /></CardContent>
+              </Card>
+            ))}
           </TabsContent>
         </Tabs>
       </main>

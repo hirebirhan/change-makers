@@ -30,6 +30,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (res.ok) {
       setIsAuthenticated(true);
+      // refresh() invalidates the server-component cache so pages re-fetch fresh data
+      router.refresh();
       router.push("/");
       return true;
     }

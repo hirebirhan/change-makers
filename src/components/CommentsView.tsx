@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Comment, YouTubeApiResponse } from "@/types/youtube";
@@ -40,6 +40,26 @@ export function CommentsView({
   const [query, setQuery] = useState("");
   const [sentiment, setSentiment] = useState<"all" | Comment["sentiment"]>("all");
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Background Gemini re-classification — runs after initial render, doesn't block the page
+  useEffect(() => {
+    if (!comments.length) return;
+    const payload = comments.map((c) => ({ id: c.id, text: c.text }));
+    fetch("/api/sentiment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ comments: payload }),
+    })
+      .then((r) => r.json())
+      .then(({ sentiments }: { sentiments: Record<string, Comment["sentiment"]> }) => {
+        if (!sentiments || !Object.keys(sentiments).length) return;
+        setComments((prev) =>
+          prev.map((c) => sentiments[c.id] ? { ...c, sentiment: sentiments[c.id] } : c)
+        );
+      })
+      .catch(() => { /* silently keep keyword-based sentiment on failure */ });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once on mount with the initial comment set
 
   const refresh = useCallback(async () => {
     setRefreshing(true);

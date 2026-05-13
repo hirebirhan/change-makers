@@ -9,6 +9,8 @@ import { YouTubeApiResponse } from "@/types/youtube";
 import { GrowthMilestone, UploadStreak } from "@/lib/analytics-utils";
 import { fetchYouTubeAnalytics } from "@/lib/youtube-api";
 import { Target, Users, Eye, PlaySquare, Flame, Calendar } from "lucide-react";
+import { UploadCalendar } from "@/components/UploadCalendar";
+import { AlertSettings } from "@/components/AlertSystem";
 
 interface GrowthViewProps {
   initialData: YouTubeApiResponse;
@@ -85,6 +87,9 @@ export function GrowthView({ initialData, milestones, streak }: GrowthViewProps)
           </Card>
         </div>
 
+        {/* Upload Calendar */}
+        <UploadCalendar videos={data.videos} />
+
         {/* Milestones */}
         <Card>
           <CardHeader className="pb-3">
@@ -119,6 +124,9 @@ export function GrowthView({ initialData, milestones, streak }: GrowthViewProps)
             })}
           </CardContent>
         </Card>
+
+        {/* Alerts */}
+        <AlertSettings />
 
         {/* Achievements */}
         <Card>

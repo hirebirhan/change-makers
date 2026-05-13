@@ -18,7 +18,7 @@ export function TopVideosCard({ videos }: TopVideosCardProps) {
       <CardContent className="flex-1 overflow-y-auto max-h-96">
         <div className="space-y-1">
           {topVideos.map((video, index) => (
-            <VideoCard key={video.id} video={video} rank={index + 1} />
+            <VideoCard key={video.id} video={video} rank={index + 1} priority={index === 0} />
           ))}
         </div>
       </CardContent>

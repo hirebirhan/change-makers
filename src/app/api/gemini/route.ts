@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? "");
 
-type Mode = "analyze" | "topics" | "description" | "title";
+type Mode = "analyze" | "topics" | "description" | "title" | "script" | "comment-reply";
 
 const MODEL_PRIORITY = [
   'gemini-flash-latest',
@@ -15,13 +15,17 @@ const MODEL_PRIORITY = [
 let workingModel: string | null = null;
 
 function buildPrompt(mode: Mode, payload: Record<string, unknown>): string {
-  const { channel, videos, trends, keyword, existingTitle, existingDescription } = payload as {
+  const { channel, videos, trends, keyword, existingTitle, existingDescription, keyPoints, format, commentText, videoTitle } = payload as {
     channel: { channelName: string; channelDescription: string; subscriberCount: number; viewCount: number; videoCount: number };
     videos: { title: string; viewCount: number; likeCount: number; commentCount: number; tags: string[]; description: string }[];
     trends: string[];
     keyword: string;
     existingTitle: string;
     existingDescription: string;
+    keyPoints: string[];
+    format: string;
+    commentText: string;
+    videoTitle: string;
   };
 
   if (mode === "analyze") {
@@ -114,6 +118,53 @@ Generate 6 optimized title variations that:
 
 For each title, add a one-line note on why it works.
 Format: "Title" — reason`;
+  }
+
+  if (mode === "script") {
+    const points = (keyPoints ?? []).filter(Boolean).map((p, i) => `${i + 1}. ${p}`).join("\n");
+    return `You are a YouTube script writer for educational/tech content.
+
+Channel: ${channel?.channelName ?? ""}
+Niche: ${channel?.channelDescription ?? ""}
+Video title: "${existingTitle}"
+Format: ${format ?? "educational"}
+Key points to cover:
+${points}
+
+Write a complete, ready-to-record YouTube video script with these sections:
+
+**HOOK (0:00–0:30)**
+An attention-grabbing opening that speaks directly to the viewer's pain point or curiosity. Do NOT start with "Hey guys" or generic intros.
+
+**INTRO (0:30–1:30)**
+Briefly introduce yourself, what this video covers, and why the viewer should keep watching.
+
+**MAIN CONTENT**
+One section per key point above. Each section should have:
+- A clear heading with approximate timestamp
+- 3–5 natural-sounding talking points (written as spoken sentences, not bullet fragments)
+- A smooth transition to the next section
+
+**OUTRO & CTA (last 60 seconds)**
+Summarise the key takeaways, ask a specific question in the comments, plug subscribe, and tease the next video.
+
+Write in a conversational, first-person tone. Use plain spoken English — contractions, short sentences. Do not use filler phrases like "In this video we will…". Mark on-screen text suggestions with [ON SCREEN: …].`;
+  }
+
+  if (mode === "comment-reply") {
+    return `You are a friendly, professional YouTube creator replying to a comment on your channel.
+
+Channel: ${channel?.channelName ?? ""}
+Video: "${videoTitle ?? ""}"
+Comment: "${commentText}"
+
+Write a single, genuine reply (2–4 sentences max) that:
+- Directly addresses what the commenter said
+- Is warm and personal, not corporate
+- Adds a small piece of extra value where possible
+- Ends with an engaging follow-up question if natural
+
+Return only the reply text, no labels or quotes.`;
   }
 
   return "";

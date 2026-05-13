@@ -14,7 +14,7 @@ interface MonetizationProgressProps {
 
 const REQUIREMENTS = {
   subscribers: 1000,
-  watchTimeHours: 3000,
+  watchTimeHours: 4000,
   publicVideos: 1,
 } as const;
 

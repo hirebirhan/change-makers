@@ -1,7 +1,11 @@
-import { ThumbsUp, MessageCircle } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { ThumbsUp, MessageCircle, Sparkles, Copy, Check, RefreshCw } from "lucide-react";
 import type { Comment } from "@/types/youtube";
 import { CommentAvatar } from "./CommentAvatar";
 import { SentimentBadge } from "./SentimentBadge";
+import { Button } from "@/components/ui/button";
 
 interface CommentCardProps {
   comment: Comment & { videoTitle?: string };
@@ -19,8 +23,41 @@ function timeAgo(dateString: string) {
 }
 
 export function CommentCard({ comment, showVideoTitle = false, avatarSize = 32 }: CommentCardProps) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  async function draftReply() {
+    setLoading(true);
+    setDraft(null);
+    try {
+      const res = await fetch("/api/gemini", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "comment-reply",
+          commentText: comment.text,
+          videoTitle: comment.videoTitle ?? "",
+        }),
+      });
+      const json = await res.json();
+      setDraft(json.result ?? null);
+    } catch {
+      setDraft("Failed to generate reply. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function copy() {
+    if (!draft) return;
+    navigator.clipboard.writeText(draft);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   return (
-    <div className="rounded-lg border bg-card hover:bg-muted/50 p-3 transition-colors">
+    <div className="rounded-lg border bg-card hover:bg-muted/30 p-3 transition-colors">
       <div className="flex gap-3">
         <CommentAvatar src={comment.authorProfileImageUrl} alt={comment.author} size={avatarSize} />
         <div className="flex-1 min-w-0">
@@ -41,11 +78,36 @@ export function CommentCard({ comment, showVideoTitle = false, avatarSize = 32 }
               </span>
             )}
             {showVideoTitle && comment.videoTitle && (
-              <span className="ml-auto truncate max-w-xs text-muted-foreground/60 italic text-xs">
+              <span className="truncate max-w-xs text-muted-foreground/60 italic text-xs">
                 {comment.videoTitle}
               </span>
             )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-primary"
+              onClick={draftReply}
+              disabled={loading}
+            >
+              {loading
+                ? <><RefreshCw className="size-3 animate-spin" />Drafting…</>
+                : <><Sparkles className="size-3" />Draft Reply</>
+              }
+            </Button>
           </div>
+
+          {/* Draft reply output */}
+          {draft && (
+            <div className="mt-2.5 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-medium text-primary uppercase tracking-wide">AI Draft</span>
+                <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px] gap-1" onClick={copy}>
+                  {copied ? <><Check className="size-3 text-green-500" />Copied</> : <><Copy className="size-3" />Copy</>}
+                </Button>
+              </div>
+              <p className="text-xs text-foreground leading-relaxed">{draft}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
