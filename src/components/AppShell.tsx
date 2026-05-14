@@ -6,8 +6,8 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   LogOut, LayoutDashboard, PlaySquare, Sparkles, RefreshCw,
-  MessageCircle, Brain, Type, TrendingUp, CalendarClock, Scissors,
-  ExternalLink, BarChart2, Lightbulb, Scroll, KanbanSquare,
+  MessageCircle, Brain, Type, TrendingUp, Scissors,
+  ExternalLink, BarChart2, Scroll,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -22,19 +22,16 @@ import {
 import { ChannelStats } from "@/types/youtube";
 
 const NAV = [
-  { href: "/",                    label: "Dashboard",          icon: LayoutDashboard },
-  { href: "/videos",              label: "Videos",             icon: PlaySquare },
-  { href: "/performance",         label: "Performance",        icon: TrendingUp },
-  { href: "/publishing-schedule", label: "Publishing Schedule",icon: CalendarClock },
-  { href: "/comments",            label: "Comments",           icon: MessageCircle },
-  { href: "/short-maker",         label: "Short Maker",        icon: Scissors },
-  { href: "/seo",                 label: "SEO Studio",         icon: Sparkles },
-  { href: "/title-ranker",        label: "Title Ranker",       icon: Type },
-  { href: "/ai",                  label: "AI Studio",          icon: Brain },
-  { href: "/growth",              label: "Growth",             icon: BarChart2 },
-  { href: "/insights",            label: "Insights",           icon: Lightbulb },
-  { href: "/script-maker",        label: "Script Maker",       icon: Scroll },
-  { href: "/pipeline",            label: "Pipeline",           icon: KanbanSquare },
+  { href: "/",             label: "Dashboard",   icon: LayoutDashboard },
+  { href: "/videos",       label: "Videos",      icon: PlaySquare },
+  { href: "/performance",  label: "Performance", icon: TrendingUp },
+  { href: "/comments",     label: "Comments",    icon: MessageCircle },
+  { href: "/short-maker",  label: "Short Maker", icon: Scissors },
+  { href: "/seo",          label: "SEO Studio",  icon: Sparkles },
+  { href: "/title-ranker", label: "Title Ranker",icon: Type },
+  { href: "/ai",           label: "AI Studio",   icon: Brain },
+  { href: "/growth",       label: "Growth",      icon: BarChart2 },
+  { href: "/script-maker", label: "Script Maker",icon: Scroll },
 ];
 
 const YT_LOGO = (

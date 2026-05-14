@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +39,23 @@ export function GrowthView({ initialData, milestones, streak }: GrowthViewProps)
       setRefreshing(false);
     }
   }, []);
+
+  const publishingInsights = useMemo(() => {
+    const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayStats: Record<number, { views: number; count: number }> = {};
+    for (const v of data.videos) {
+      const day = new Date(v.publishedAt).getDay();
+      if (!dayStats[day]) dayStats[day] = { views: 0, count: 0 };
+      dayStats[day].views += v.viewCount;
+      dayStats[day].count += 1;
+    }
+    return DAYS.map((label, i) => ({
+      label,
+      short: label.slice(0, 3),
+      avgViews: dayStats[i]?.count ? Math.round(dayStats[i].views / dayStats[i].count) : 0,
+      count: dayStats[i]?.count ?? 0,
+    })).sort((a, b) => b.avgViews - a.avgViews);
+  }, [data.videos]);
 
   return (
     <AppShell channel={data.channel} onRefresh={refresh} refreshing={refreshing} lastUpdated={lastUpdated}>
@@ -89,6 +106,44 @@ export function GrowthView({ initialData, milestones, streak }: GrowthViewProps)
 
         {/* Upload Calendar */}
         <UploadCalendar videos={data.videos} />
+
+        {/* Publishing Schedule */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Best Days to Publish</CardTitle>
+            <CardDescription className="text-xs">
+              Ranked by average views across your {data.videos.length} published videos
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2.5">
+            {publishingInsights.map((day, i) => {
+              const max = publishingInsights[0].avgViews;
+              const pct = max ? Math.round((day.avgViews / max) * 100) : 0;
+              return (
+                <div key={day.label} className="flex items-center gap-3">
+                  <span className="text-xs w-7 text-muted-foreground shrink-0">{day.short}</span>
+                  <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${i === 0 ? 'bg-chart-1' : i === 1 ? 'bg-chart-2' : 'bg-muted-foreground/30'}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <span className="text-xs tabular-nums w-20 text-right text-muted-foreground">
+                    {day.count > 0 ? `${day.avgViews.toLocaleString()} avg` : 'no data'}
+                  </span>
+                  {i === 0 && day.count > 0 && (
+                    <Badge variant="secondary" className="text-xs py-0 px-1.5 shrink-0">Best</Badge>
+                  )}
+                </div>
+              );
+            })}
+            {publishingInsights[0]?.count > 0 && (
+              <p className="text-xs text-muted-foreground pt-1">
+                Your videos published on <span className="font-medium text-foreground">{publishingInsights[0].label}</span> average the highest views.
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Milestones */}
         <Card>
