@@ -5,9 +5,10 @@ import { CommentCard } from "./CommentCard";
 interface CommentsByVideoProps {
   videos: Video[];
   comments: (Comment & { videoTitle?: string })[];
+  isOAuthConnected?: boolean;
 }
 
-export function CommentsByVideo({ videos, comments }: CommentsByVideoProps) {
+export function CommentsByVideo({ videos, comments, isOAuthConnected = false }: CommentsByVideoProps) {
   const sortedVideos = [...videos].sort((a, b) => b.viewCount - a.viewCount);
 
   return (
@@ -31,7 +32,7 @@ export function CommentsByVideo({ videos, comments }: CommentsByVideoProps) {
             </div>
             <div className="space-y-2">
               {videoComments.map((comment) => (
-                <CommentCard key={comment.id} comment={comment} avatarSize={28} />
+                <CommentCard key={comment.id} comment={comment} avatarSize={28} isOAuthConnected={isOAuthConnected} />
               ))}
             </div>
           </div>

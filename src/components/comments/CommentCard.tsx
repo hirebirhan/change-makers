@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ThumbsUp, MessageCircle, Sparkles, Copy, Check, RefreshCw } from "lucide-react";
+import { ThumbsUp, MessageCircle, Sparkles, Copy, Check, RefreshCw, Send } from "lucide-react";
 import type { Comment } from "@/types/youtube";
 import { CommentAvatar } from "./CommentAvatar";
 import { SentimentBadge } from "./SentimentBadge";
@@ -11,6 +11,7 @@ interface CommentCardProps {
   comment: Comment & { videoTitle?: string };
   showVideoTitle?: boolean;
   avatarSize?: number;
+  isOAuthConnected?: boolean;
 }
 
 function timeAgo(dateString: string) {
@@ -22,10 +23,12 @@ function timeAgo(dateString: string) {
   return `${Math.floor(diffDays / 365)}y ago`;
 }
 
-export function CommentCard({ comment, showVideoTitle = false, avatarSize = 32 }: CommentCardProps) {
+export function CommentCard({ comment, showVideoTitle = false, avatarSize = 32, isOAuthConnected = false }: CommentCardProps) {
   const [draft, setDraft] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [posting, setPosting] = useState(false);
+  const [postStatus, setPostStatus] = useState<"idle" | "success" | "error">("idle");
 
   async function draftReply() {
     setLoading(true);
@@ -54,6 +57,24 @@ export function CommentCard({ comment, showVideoTitle = false, avatarSize = 32 }
     navigator.clipboard.writeText(draft);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function postReply() {
+    if (!draft) return;
+    setPosting(true);
+    setPostStatus("idle");
+    try {
+      const res = await fetch("/api/comments/reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ parentId: comment.id, text: draft }),
+      });
+      setPostStatus(res.ok ? "success" : "error");
+    } catch {
+      setPostStatus("error");
+    } finally {
+      setPosting(false);
+    }
   }
 
   return (
@@ -101,11 +122,35 @@ export function CommentCard({ comment, showVideoTitle = false, avatarSize = 32 }
             <div className="mt-2.5 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-medium text-primary uppercase tracking-wide">AI Draft</span>
-                <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px] gap-1" onClick={copy}>
-                  {copied ? <><Check className="size-3 text-green-500" />Copied</> : <><Copy className="size-3" />Copy</>}
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px] gap-1" onClick={copy}>
+                    {copied ? <><Check className="size-3 text-green-500" />Copied</> : <><Copy className="size-3" />Copy</>}
+                  </Button>
+                  {isOAuthConnected && postStatus !== "success" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-5 px-1.5 text-[10px] gap-1 text-primary"
+                      onClick={postReply}
+                      disabled={posting}
+                    >
+                      {posting
+                        ? <><RefreshCw className="size-3 animate-spin" />Posting…</>
+                        : <><Send className="size-3" />Post Reply</>
+                      }
+                    </Button>
+                  )}
+                </div>
               </div>
               <p className="text-xs text-foreground leading-relaxed">{draft}</p>
+              {postStatus === "success" && (
+                <p className="text-[10px] text-green-500 flex items-center gap-1">
+                  <Check className="size-3" />Reply posted to YouTube
+                </p>
+              )}
+              {postStatus === "error" && (
+                <p className="text-[10px] text-destructive">Failed to post — try again</p>
+              )}
             </div>
           )}
         </div>

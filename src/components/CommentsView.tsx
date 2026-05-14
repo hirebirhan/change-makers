@@ -6,7 +6,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Comment, YouTubeApiResponse } from "@/types/youtube";
 import { fetchYouTubeAnalytics } from "@/lib/youtube-api";
 import type { CommentSummary } from "@/lib/comments-server";
-import { MessageCircle, ThumbsUp } from "lucide-react";
+import { MessageCircle, ThumbsUp, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { SummaryCards } from "@/components/comments/SummaryCards";
 import { CommentFilters } from "@/components/comments/CommentFilters";
 import { LoadingState } from "@/components/comments/LoadingState";
@@ -40,6 +41,19 @@ export function CommentsView({
   const [query, setQuery] = useState("");
   const [sentiment, setSentiment] = useState<"all" | Comment["sentiment"]>("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isOAuthConnected, setIsOAuthConnected] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/youtube/status")
+      .then((r) => r.json())
+      .then((d) => setIsOAuthConnected(d.connected ?? false))
+      .catch(() => {});
+  }, []);
+
+  async function disconnectYouTube() {
+    await fetch("/api/auth/youtube/status", { method: "DELETE" });
+    setIsOAuthConnected(false);
+  }
 
   // Background Gemini re-classification — runs after initial render, doesn't block the page
   useEffect(() => {
@@ -96,9 +110,33 @@ export function CommentsView({
   return (
     <AppShell channel={data.channel} onRefresh={refresh} refreshing={refreshing} lastUpdated={lastUpdated}>
       <main className="flex-1 w-full px-4 py-4 space-y-4">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">Comments</h1>
-          <p className="text-xs text-muted-foreground leading-none">Sentiment analysis across all your videos</p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight">Comments</h1>
+            <p className="text-xs text-muted-foreground leading-none">Sentiment analysis across all your videos</p>
+          </div>
+
+          {/* YouTube OAuth connect / disconnect */}
+          {isOAuthConnected ? (
+            <div className="flex items-center gap-2 rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-1.5">
+              <svg className="size-3.5 text-green-500" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+              </svg>
+              <span className="text-xs text-green-600 font-medium">YouTube connected</span>
+              <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px] gap-1 ml-1 text-muted-foreground" onClick={disconnectYouTube}>
+                <LogOut className="size-3" />Disconnect
+              </Button>
+            </div>
+          ) : (
+            <a href="/api/auth/youtube">
+              <Button size="sm" variant="outline" className="gap-2 h-8">
+                <svg className="size-3.5 text-destructive" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                </svg>
+                Connect YouTube to Reply
+              </Button>
+            </a>
+          )}
         </div>
 
         {summary && <SummaryCards summary={summary} />}
@@ -130,7 +168,7 @@ export function CommentsView({
             </TabsList>
 
             <TabsContent value="feed" className="mt-0 space-y-2">
-              <CommentsFeed comments={paginatedComments} />
+              <CommentsFeed comments={paginatedComments} isOAuthConnected={isOAuthConnected} />
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
@@ -141,7 +179,7 @@ export function CommentsView({
             </TabsContent>
 
             <TabsContent value="byVideo" className="mt-0 space-y-3">
-              <CommentsByVideo videos={data.videos} comments={paginatedComments} />
+              <CommentsByVideo videos={data.videos} comments={paginatedComments} isOAuthConnected={isOAuthConnected} />
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}

@@ -35,22 +35,11 @@ export interface DailyMetric {
   unsubscribedViews: number;
 }
 
-export interface MonthlyReport {
-  month: string;
-  totalViews: number;
-  totalWatchTimeHours: number;
-  newSubscribers: number;
-  topVideos: Video[];
-  avgViewsPerVideo: number;
-  engagementRate: number;
-}
-
 export interface YouTubeApiResponse {
   success: boolean;
   channel: ChannelStats;
   videos: Video[];
   dailyMetrics: DailyMetric[];
-  reports: MonthlyReport[];
 }
 
 export interface Comment {

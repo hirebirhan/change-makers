@@ -185,49 +185,6 @@ function buildDailyMetrics(videos: { publishedAt: string; viewCount: number }[])
   });
 }
 
-function buildMonthlyReports(videos: { publishedAt: string; viewCount: number; likeCount: number; commentCount: number }[]) {
-  const now = new Date();
-  const last12Months: Record<string, { views: number; likes: number; comments: number; count: number; date: Date }> = {};
-  
-  // Initialize last 12 months (from 11 months ago to current month)
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const key = d.toLocaleString("en-US", { month: "short", year: "numeric" });
-    last12Months[key] = { views: 0, likes: 0, comments: 0, count: 0, date: d };
-  }
-  
-  // Aggregate video data only for videos published in the last 12 months
-  const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
-  
-  for (const v of videos) {
-    const pubDate = new Date(v.publishedAt);
-    
-    // Only include videos from the last 12 months
-    if (pubDate >= twelveMonthsAgo) {
-      const key = pubDate.toLocaleString("en-US", { month: "short", year: "numeric" });
-      if (last12Months[key]) {
-        last12Months[key].views += v.viewCount;
-        last12Months[key].likes += v.likeCount;
-        last12Months[key].comments += v.commentCount;
-        last12Months[key].count += 1;
-      }
-    }
-  }
-  
-  // Return in chronological order (oldest to newest)
-  return Object.entries(last12Months)
-    .sort(([, a], [, b]) => a.date.getTime() - b.date.getTime())
-    .map(([month, { views, likes, comments, count }]) => ({
-      month,
-      totalViews: views,
-      totalWatchTimeHours: Math.round(views * 0.07),
-      newSubscribers: Math.round(views * 0.015),
-      topVideos: [],
-      avgViewsPerVideo: count ? Math.round(views / count) : 0,
-      engagementRate: views ? parseFloat((((likes + comments) / views) * 100).toFixed(1)) : 0,
-    }));
-}
-
 export async function getYouTubeData(): Promise<YouTubeApiResponse> {
   const [channel, videos] = await Promise.all([fetchChannel(), fetchVideos()]);
   const totalEngagement = videos.reduce((sum, v) => sum + v.likeCount + v.commentCount, 0);
@@ -236,6 +193,5 @@ export async function getYouTubeData(): Promise<YouTubeApiResponse> {
     channel: { ...channel, totalEngagement },
     videos,
     dailyMetrics: buildDailyMetrics(videos),
-    reports: buildMonthlyReports(videos),
   };
 }

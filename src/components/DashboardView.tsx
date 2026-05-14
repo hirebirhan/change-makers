@@ -4,7 +4,6 @@ import { useState, useCallback, useMemo } from "react";
 import { AppShell } from "@/components/AppShell";
 import ChannelOverview from "@/components/ChannelOverview";
 import AnalyticsChart from "@/components/AnalyticsChart";
-import ReportsSection from "@/components/ReportsSection";
 import MonetizationProgress from "@/components/MonetizationProgress";
 import { Badge } from "@/components/ui/badge";
 import { YouTubeApiResponse } from "@/types/youtube";
@@ -81,7 +80,6 @@ export function DashboardView({ initialData }: { initialData: YouTubeApiResponse
 
         <MonetizationProgress stats={data.channel} totalWatchTimeHours={totalWatchTimeHours} />
 
-        <ReportsSection reports={data.reports} />
       </main>
     </AppShell>
   );
